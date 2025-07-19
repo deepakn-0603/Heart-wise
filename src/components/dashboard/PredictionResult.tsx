@@ -46,6 +46,15 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
         if (!result) return;
 
         try {
+            if (typeof document === 'undefined') {
+                toast({
+                    variant: "destructive",
+                    title: "Download Failed",
+                    description: "This feature is only available on the client-side.",
+                });
+                return;
+            }
+
             const doc = new jsPDF();
             const { patientData, predictionResult, timestamp, id } = result;
 
@@ -133,7 +142,22 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
   }
 
   if (!result) {
-    return null;
+    return (
+        <Card className="h-full">
+            <CardHeader>
+                <CardTitle>Ready for Diagnosis</CardTitle>
+                <CardDescription>
+                    Your results will appear here once you submit the patient data.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="flex h-64 items-center justify-center">
+                <div className="text-center text-muted-foreground">
+                    <HeartPulse className="mx-auto h-12 w-12" />
+                    <p className="mt-2">Awaiting patient data...</p>
+                </div>
+            </CardContent>
+        </Card>
+    );
   }
 
   const isHighRisk = result.predictionResult.riskPrediction === "yes";

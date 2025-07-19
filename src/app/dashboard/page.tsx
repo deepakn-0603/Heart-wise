@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -28,7 +28,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import { generateExplanation } from "@/ai/flows/generate-explanation";
 import type { PatientData, PredictionResult, Diagnosis } from "@/types";
@@ -39,8 +38,6 @@ import { HealthChart } from "@/components/dashboard/HealthChart";
 import { HistoryTable } from "@/components/dashboard/HistoryTable";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 
 const formSchema = z.object({
   age: z.coerce.number().min(1, "Age is required").max(120),
@@ -164,6 +161,11 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentResult, setCurrentResult] = useState<Diagnosis | null>(null);
   const [history, setHistory] = useState<Diagnosis[]>([]);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -234,7 +236,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
+      <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
         <Logo />
         <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
           <div className="ml-auto flex-1 sm:flex-initial"></div>
@@ -325,7 +327,7 @@ export default function DashboardPage() {
                             />
                           ))}
                         </div>
-                        <Button type="submit" disabled={isLoading}>
+                        <Button type="submit" disabled={isLoading || !isClient}>
                           {isLoading
                             ? "Analyzing..."
                             : "Get Diagnosis"}
@@ -353,7 +355,7 @@ export default function DashboardPage() {
               result={currentResult}
               isLoading={isLoading}
             />
-            <HealthChart data={currentResult?.patientData ?? null} />
+            {isClient && <HealthChart data={currentResult?.patientData ?? null} />}
           </div>
         </div>
       </main>
