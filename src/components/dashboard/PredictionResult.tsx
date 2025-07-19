@@ -43,11 +43,60 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
 
     const handleDownload = () => {
         if (!result) return;
-        toast({
-            title: "Download Started",
-            description: "Your diagnosis report is being downloaded.",
-        });
-        // In a real app, you would generate and download a file (e.g., PDF)
+
+        const reportContent = `
+HeartWise Diagnosis Report
+==========================
+Date: ${new Date(result.timestamp).toLocaleString()}
+
+Patient Data:
+-----------
+- Age: ${result.patientData.age}
+- Sex: ${result.patientData.sex === 1 ? 'Male' : 'Female'}
+- Chest Pain Type: ${result.patientData.cp}
+- Resting Blood Pressure: ${result.patientData.trestbps} mm Hg
+- Serum Cholesterol: ${result.patientData.chol} mg/dl
+- Fasting Blood Sugar > 120 mg/dl: ${result.patientData.fbs === 1 ? 'True' : 'False'}
+- Resting ECG Results: ${result.patientData.restecg}
+- Maximum Heart Rate Achieved: ${result.patientData.thalach}
+- Exercise Induced Angina: ${result.patientData.exang === 1 ? 'Yes' : 'No'}
+- ST Depression Induced by Exercise: ${result.patientData.oldpeak}
+- Slope of Peak Exercise ST Segment: ${result.patientData.slope}
+- Number of Major Vessels Colored by Fluoroscopy: ${result.patientData.ca}
+- Thal Rate: ${result.patientData.thal}
+
+Prediction Result:
+------------------
+- Risk: ${result.predictionResult.riskPrediction === "yes" ? "High Risk" : "Low Risk"}
+- Probability: ${(result.predictionResult.probability * 100).toFixed(2)}%
+
+Explanation:
+------------
+${result.predictionResult.explanation}
+`;
+
+        try {
+            const blob = new Blob([reportContent.trim()], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `HeartWise-Report-${result.id}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            toast({
+                title: "Download Complete",
+                description: "Your diagnosis report has been downloaded.",
+            });
+        } catch (error) {
+             toast({
+                variant: "destructive",
+                title: "Download Failed",
+                description: "Could not download the report.",
+            });
+        }
     }
 
   if (isLoading) {
@@ -74,7 +123,7 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
 
   return (
     <Card
-      className={`shadow-lg ${isHighRisk ? "border-destructive" : "border-accent"}`}
+      className={`shadow-lg ${isHighRisk ? "border-destructive" : "border-green-500"}`}
     >
       <CardHeader>
         <div className="flex items-start justify-between">
@@ -83,7 +132,7 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
             <CardDescription>
               Based on the provided data, the predicted risk is{" "}
               <span
-                className={`font-bold ${isHighRisk ? "text-destructive" : "text-accent-foreground"}`}
+                className={`font-bold ${isHighRisk ? "text-destructive" : "text-green-600"}`}
               >
                 {(result.predictionResult.probability * 100).toFixed(2)}%
               </span>
