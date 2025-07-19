@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { PatientData } from "@/types";
+import { HeartPulse } from "lucide-react";
 
 interface HealthChartProps {
   data: PatientData | null;
@@ -20,7 +21,22 @@ const healthyRanges = {
 };
 
 export function HealthChart({ data }: HealthChartProps) {
-    if (!data) return null;
+    if (!data) {
+        return (
+             <Card>
+                <CardHeader>
+                    <CardTitle>Health Metrics Overview</CardTitle>
+                    <CardDescription>
+                    Comparing key metrics against recommended healthy values.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="flex h-[300px] flex-col items-center justify-center text-center">
+                    <HeartPulse className="h-12 w-12 text-muted-foreground" />
+                    <p className="mt-4 text-muted-foreground">No data to display chart.</p>
+                </CardContent>
+            </Card>
+        )
+    }
 
     const chartData = [
         { name: 'Resting BP', yourValue: data.trestbps, healthyValue: healthyRanges.trestbps, unit: 'mm Hg' },
@@ -29,7 +45,7 @@ export function HealthChart({ data }: HealthChartProps) {
     ];
 
   return (
-    <Card className="shadow-lg">
+    <Card>
       <CardHeader>
         <CardTitle>Health Metrics Overview</CardTitle>
         <CardDescription>
@@ -39,7 +55,7 @@ export function HealthChart({ data }: HealthChartProps) {
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
                 <Tooltip
@@ -48,11 +64,11 @@ export function HealthChart({ data }: HealthChartProps) {
                         border: "1px solid hsl(var(--border))",
                         borderRadius: "var(--radius)",
                     }}
-                    cursor={{fill: 'hsl(var(--muted))'}}
+                    cursor={{fill: 'hsl(var(--accent))'}}
                 />
-                <Legend iconSize={10} wrapperStyle={{fontSize: "12px"}}/>
-                <Bar dataKey="yourValue" fill="hsl(var(--primary))" name="Your Value" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="healthyValue" fill="hsl(var(--accent))" name="Healthy Value" radius={[4, 4, 0, 0]} />
+                <Legend iconSize={10} wrapperStyle={{fontSize: "12px", paddingTop: '20px'}}/>
+                <Bar dataKey="yourValue" fill="hsl(var(--chart-1))" name="Your Value" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="healthyValue" fill="hsl(var(--chart-2))" name="Healthy Value" radius={[4, 4, 0, 0]} />
             </BarChart>
         </ResponsiveContainer>
       </CardContent>

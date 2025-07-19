@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/Logo";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,17 +37,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+      <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">
             <Logo />
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight">
-            Welcome Back to HeartWise
+            Welcome Back
           </CardTitle>
           <CardDescription>
-            Sign in to access your dashboard and predictions.
+            Enter your credentials to access your account.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -72,11 +73,11 @@ export default function LoginPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing In..." : "Sign In"}
+              {isLoading ? <Loader2 className="animate-spin" /> : "Sign In"}
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex justify-center">
+        <CardFooter className="flex flex-col items-center justify-center gap-2">
           <p className="text-sm text-muted-foreground">
             Don't have an account?{" "}
             <Link

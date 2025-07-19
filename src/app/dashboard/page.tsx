@@ -28,7 +28,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
 import { generateExplanation } from "@/ai/flows/generate-explanation";
 import type { PatientData, PredictionResult, Diagnosis } from "@/types";
 import { Logo } from "@/components/Logo";
@@ -38,6 +37,7 @@ import { HealthChart } from "@/components/dashboard/HealthChart";
 import { HistoryTable } from "@/components/dashboard/HistoryTable";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   age: z.coerce.number().min(1, "Age is required").max(120),
@@ -165,6 +165,11 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setIsClient(true);
+    // Load history from localStorage if it exists
+    const savedHistory = localStorage.getItem("diagnosisHistory");
+    if (savedHistory) {
+      setHistory(JSON.parse(savedHistory));
+    }
   }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -191,13 +196,11 @@ export default function DashboardPage() {
     setCurrentResult(null);
 
     try {
-      // Mock ML model prediction
       const patientData: PatientData = values;
       const riskPrediction: PredictionResult["riskPrediction"] =
         Math.random() > 0.5 ? "yes" : "no";
       const probability = Math.random();
 
-      // Generate explanation using AI
       const explanationResult = await generateExplanation({
         ...patientData,
         riskPrediction,
@@ -214,13 +217,15 @@ export default function DashboardPage() {
           explanation: explanationResult.explanation,
         },
       };
-
+      
+      const updatedHistory = [newDiagnosis, ...history];
       setCurrentResult(newDiagnosis);
-      setHistory((prev) => [newDiagnosis, ...prev]);
-      toast({
-        title: "Diagnosis Complete",
-        description: "The prediction result is now available.",
-      });
+      setHistory(updatedHistory);
+      
+      if (typeof window !== 'undefined') {
+        localStorage.setItem("diagnosisHistory", JSON.stringify(updatedHistory));
+      }
+
     } catch (error) {
       console.error("Failed to get diagnosis:", error);
       toast({
@@ -235,25 +240,21 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
-      <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
+    <div className="flex min-h-screen w-full flex-col bg-muted/40">
+      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur-sm md:px-6">
         <Logo />
-        <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-          <div className="ml-auto flex-1 sm:flex-initial"></div>
+        <div className="ml-auto">
           <UserNav />
         </div>
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="mx-auto grid w-full max-w-6xl gap-2">
-          <h1 className="text-3xl font-semibold">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Enter patient data to predict heart disease risk.
-          </p>
+          <h1 className="text-3xl font-semibold">Heart Disease Prediction</h1>
         </div>
-        <div className="mx-auto grid w-full max-w-6xl items-start gap-6 md:grid-cols-[1fr_350px]">
+        <div className="mx-auto grid w-full max-w-6xl items-start gap-6 md:grid-cols-[1fr_380px]">
           <div className="grid gap-6">
             <Tabs defaultValue="diagnosis">
-              <TabsList>
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="diagnosis">New Diagnosis</TabsTrigger>
                 <TabsTrigger value="history">Diagnosis History</TabsTrigger>
               </TabsList>
@@ -269,9 +270,9 @@ export default function DashboardPage() {
                     <Form {...form}>
                       <form
                         onSubmit={form.handleSubmit(onSubmit)}
-                        className="space-y-8"
+                        className="space-y-6"
                       >
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
                           {formFields.numerical.map((field) => (
                             <FormField
                               key={field.name}
@@ -327,10 +328,15 @@ export default function DashboardPage() {
                             />
                           ))}
                         </div>
-                        <Button type="submit" disabled={isLoading || !isClient}>
-                          {isLoading
-                            ? "Analyzing..."
-                            : "Get Diagnosis"}
+                        <Button type="submit" disabled={isLoading || !isClient} className="w-full sm:w-auto">
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="animate-spin" />
+                              Analyzing...
+                            </>
+                          ) : (
+                            "Get Diagnosis"
+                          )}
                         </Button>
                       </form>
                     </Form>
@@ -355,7 +361,7 @@ export default function DashboardPage() {
               result={currentResult}
               isLoading={isLoading}
             />
-            {isClient && <HealthChart data={currentResult?.patientData ?? null} />}
+            {isClient && <HealthChart data={currentResult?.patientData ?? history[0]?.patientData ?? null} />}
           </div>
         </div>
       </main>

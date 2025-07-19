@@ -33,7 +33,7 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
                 title: "Copied to Clipboard",
                 description: "Diagnosis result has been copied.",
             });
-        }).catch(err => {
+        }).catch(() => {
              toast({
                 variant: "destructive",
                 title: "Failed to Copy",
@@ -46,69 +46,64 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
         if (!result) return;
 
         try {
-            if (typeof document === 'undefined') {
-                toast({
-                    variant: "destructive",
-                    title: "Download Failed",
-                    description: "This feature is only available on the client-side.",
-                });
-                return;
-            }
-
             const doc = new jsPDF();
             const { patientData, predictionResult, timestamp, id } = result;
 
             doc.setFontSize(22);
-            doc.text("HeartWise Diagnosis Report", 10, 20);
+            doc.text("HeartWise Diagnosis Report", 14, 22);
 
             doc.setFontSize(12);
-            doc.text(`Date: ${new Date(timestamp).toLocaleString()}`, 10, 30);
-            doc.line(10, 35, 200, 35);
+            doc.text(`Report ID: ${id}`, 14, 32);
+            doc.text(`Date: ${new Date(timestamp).toLocaleString()}`, 14, 38);
+            doc.line(14, 45, 196, 45);
 
             doc.setFontSize(16);
-            doc.text("Patient Data", 10, 45);
+            doc.text("Prediction Result", 14, 55);
             doc.setFontSize(12);
-            let y = 55;
-            const patientDataFields: { label: string; value: any; unit?: string }[] = [
+            doc.text(`- Risk Assessment: ${predictionResult.riskPrediction === "yes" ? "High Risk" : "Low Risk"}`, 20, 65);
+            doc.text(`- Probability Score: ${(predictionResult.probability * 100).toFixed(2)}%`, 20, 72);
+            
+            let y = 82;
+            doc.setFontSize(16);
+            doc.text("AI-Generated Explanation", 14, y);
+            y += 8;
+            doc.setFontSize(12);
+            const explanationLines = doc.splitTextToSize(predictionResult.explanation, 180);
+            doc.text(explanationLines, 20, y);
+            y += explanationLines.length * 5 + 10;
+            
+            doc.line(14, y, 196, y);
+            y += 10;
+
+            doc.setFontSize(16);
+            doc.text("Patient Data Used for Analysis", 14, y);
+            y += 10;
+            doc.setFontSize(12);
+
+            const patientDataFields: { label: string; value: any; }[] = [
                 { label: "Age", value: patientData.age },
                 { label: "Sex", value: patientData.sex === 1 ? 'Male' : 'Female' },
                 { label: "Chest Pain Type", value: patientData.cp },
-                { label: "Resting Blood Pressure", value: patientData.trestbps, unit: 'mm Hg' },
-                { label: "Serum Cholesterol", value: patientData.chol, unit: 'mg/dl' },
+                { label: "Resting Blood Pressure", value: `${patientData.trestbps} mm Hg` },
+                { label: "Serum Cholesterol", value: `${patientData.chol} mg/dl` },
                 { label: "Fasting Blood Sugar > 120 mg/dl", value: patientData.fbs === 1 ? 'True' : 'False' },
-                { label: "Resting ECG Results", value: patientData.restecg },
-                { label: "Maximum Heart Rate Achieved", value: patientData.thalach, unit: 'bpm' },
-                { label: "Exercise Induced Angina", value: patientData.exang === 1 ? 'Yes' : 'No' },
-                { label: "ST Depression Induced by Exercise", value: patientData.oldpeak },
-                { label: "Slope of Peak Exercise ST Segment", value: patientData.slope },
-                { label: "Major Vessels Colored by Fluoroscopy", value: patientData.ca },
+                { label: "Resting ECG", value: patientData.restecg },
+                { label: "Max Heart Rate", value: `${patientData.thalach} bpm` },
+                { label: "Exercise Angina", value: patientData.exang === 1 ? 'Yes' : 'No' },
+                { label: "ST Depression", value: patientData.oldpeak },
+                { label: "Slope of ST Segment", value: patientData.slope },
+                { label: "Major Vessels (Fluoroscopy)", value: patientData.ca },
                 { label: "Thal Rate", value: patientData.thal },
             ];
             
-            patientDataFields.forEach(field => {
-                doc.text(`- ${field.label}: ${field.value} ${field.unit || ''}`, 15, y);
+            patientDataFields.forEach((field, index) => {
+                doc.text(`${field.label}: ${field.value}`, 20, y);
                 y += 7;
+                if (index === 6) { // column break
+                    y = 137;
+                    doc.text(`${patientDataFields[7].label}: ${patientDataFields[7].value}`, 110, y-7);
+                }
             });
-            
-            y += 5;
-            doc.line(10, y, 200, y);
-            y += 10;
-            
-            doc.setFontSize(16);
-            doc.text("Prediction Result", 10, y);
-            y += 10;
-            doc.setFontSize(12);
-            doc.text(`- Risk: ${predictionResult.riskPrediction === "yes" ? "High Risk" : "Low Risk"}`, 15, y);
-            y += 7;
-            doc.text(`- Probability: ${(predictionResult.probability * 100).toFixed(2)}%`, 15, y);
-            y += 12;
-
-            doc.setFontSize(16);
-            doc.text("Explanation", 10, y);
-            y += 10;
-            doc.setFontSize(12);
-            const explanationLines = doc.splitTextToSize(predictionResult.explanation, 180);
-            doc.text(explanationLines, 15, y);
             
             doc.save(`HeartWise-Report-${id}.pdf`);
             
@@ -120,7 +115,7 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
              toast({
                 variant: "destructive",
                 title: "Download Failed",
-                description: "Could not download the report.",
+                description: "An unexpected error occurred while generating the PDF.",
             });
         }
     }
@@ -131,10 +126,10 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
         <CardHeader>
           <CardTitle>Generating Diagnosis...</CardTitle>
           <CardDescription>
-            Our AI is analyzing your data. Please wait a moment.
+            Our AI is analyzing the patient data. Please wait.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex h-64 items-center justify-center">
+        <CardContent className="flex h-[300px] items-center justify-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </CardContent>
       </Card>
@@ -147,14 +142,12 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
             <CardHeader>
                 <CardTitle>Ready for Diagnosis</CardTitle>
                 <CardDescription>
-                    Your results will appear here once you submit the patient data.
+                    Your results will appear here once you submit data.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="flex h-64 items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                    <HeartPulse className="mx-auto h-12 w-12" />
-                    <p className="mt-2">Awaiting patient data...</p>
-                </div>
+            <CardContent className="flex h-[300px] flex-col items-center justify-center text-center">
+                <HeartPulse className="h-12 w-12 text-muted-foreground" />
+                <p className="mt-4 text-muted-foreground">Awaiting patient data...</p>
             </CardContent>
         </Card>
     );
@@ -164,48 +157,44 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
 
   return (
     <Card
-      className={`shadow-lg ${isHighRisk ? "border-destructive" : "border-green-500"}`}
+      className={`shadow-lg ${isHighRisk ? "border-destructive/50" : "border-green-500/50"}`}
     >
       <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
+        <div className="flex items-start justify-between gap-4">
+          <div>
             <CardTitle>Diagnosis Result</CardTitle>
             <CardDescription>
-              Based on the provided data, the predicted risk is{" "}
-              <span
-                className={`font-bold ${isHighRisk ? "text-destructive" : "text-green-600"}`}
-              >
-                {(result.predictionResult.probability * 100).toFixed(2)}%
+              Predicted risk is{' '}
+              <span className={`font-bold ${isHighRisk ? "text-destructive" : "text-green-600"}`}>
+                {(result.predictionResult.probability * 100).toFixed(1)}%
               </span>
-              .
             </CardDescription>
           </div>
           <Badge variant={isHighRisk ? "destructive" : "success"}>
             {isHighRisk ? (
-              <AlertCircle className="mr-2 h-4 w-4" />
+              <AlertCircle />
             ) : (
-              <CheckCircle2 className="mr-2 h-4 w-4" />
+              <CheckCircle2 />
             )}
             {isHighRisk ? "High Risk" : "Low Risk"}
           </Badge>
         </div>
-        
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <h3 className="font-semibold text-lg">Explanation</h3>
-          <p className="text-sm text-muted-foreground leading-relaxed bg-secondary p-4 rounded-md">
+      <CardContent className="space-y-4">
+        <div>
+          <h3 className="font-semibold text-lg mb-2">AI-Generated Explanation</h3>
+          <p className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg leading-relaxed">
             {result.predictionResult.explanation}
           </p>
         </div>
       </CardContent>
        <CardFooter className="flex justify-end gap-2">
             <Button variant="outline" size="sm" onClick={handleShare}>
-                <Share2 className="mr-2 h-4 w-4" />
+                <Share2 />
                 Share
             </Button>
-            <Button variant="outline" size="sm" onClick={handleDownload}>
-                <Download className="mr-2 h-4 w-4" />
+            <Button variant="default" size="sm" onClick={handleDownload}>
+                <Download/>
                 Download PDF
             </Button>
        </CardFooter>
