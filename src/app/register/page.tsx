@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/Logo";
 import { useToast } from "@/hooks/use-toast";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -25,14 +25,14 @@ export default function LoginPage() {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
-    // Mock authentication
+    // Mock registration
     setTimeout(() => {
       toast({
-        title: "Login Successful",
-        description: "Redirecting to your dashboard...",
+        title: "Registration Successful",
+        description: "You can now log in with your new account.",
       });
-      router.push("/dashboard");
-    }, 1000);
+      router.push("/");
+    }, 1500);
   };
 
   return (
@@ -43,14 +43,18 @@ export default function LoginPage() {
             <Logo />
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight">
-            Welcome Back to HeartWise
+            Create Your HeartWise Account
           </CardTitle>
           <CardDescription>
-            Sign in to access your dashboard and predictions.
+            Join us to start monitoring your heart health today.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input id="name" type="text" placeholder="John Doe" required disabled={isLoading} />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -63,27 +67,21 @@ export default function LoginPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                disabled={isLoading}
-                placeholder="••••••••"
-              />
+              <Input id="password" type="password" required disabled={isLoading} placeholder="••••••••" />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing In..." : "Sign In"}
+              {isLoading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-muted-foreground">
-            Don't have an account?{" "}
+            Already have an account?{" "}
             <Link
-              href="/register"
+              href="/"
               className="font-semibold text-primary underline-offset-4 hover:underline"
             >
-              Sign up
+              Sign in
             </Link>
           </p>
         </CardFooter>
