@@ -51,8 +51,7 @@ export function HistoryTable({ history }: HistoryTableProps) {
                 <TableCell>{item.patientData.trestbps}</TableCell>
                 <TableCell>
                   <Badge
-                    variant={isHighRisk ? "destructive" : "default"}
-                    className={`${!isHighRisk && "bg-green-600 text-white"}`}
+                    variant={isHighRisk ? "destructive" : "success"}
                   >
                      {isHighRisk ? (
                         <AlertTriangle className="mr-1 h-3 w-3" />
