@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertCircle, CheckCircle2, Loader2, Share2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
 
 interface PredictionResultProps {
   result: Diagnosis | null;
@@ -44,47 +45,63 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
     const handleDownload = () => {
         if (!result) return;
 
-        const reportContent = `
-HeartWise Diagnosis Report
-==========================
-Date: ${new Date(result.timestamp).toLocaleString()}
-
-Patient Data:
------------
-- Age: ${result.patientData.age}
-- Sex: ${result.patientData.sex === 1 ? 'Male' : 'Female'}
-- Chest Pain Type: ${result.patientData.cp}
-- Resting Blood Pressure: ${result.patientData.trestbps} mm Hg
-- Serum Cholesterol: ${result.patientData.chol} mg/dl
-- Fasting Blood Sugar > 120 mg/dl: ${result.patientData.fbs === 1 ? 'True' : 'False'}
-- Resting ECG Results: ${result.patientData.restecg}
-- Maximum Heart Rate Achieved: ${result.patientData.thalach}
-- Exercise Induced Angina: ${result.patientData.exang === 1 ? 'Yes' : 'No'}
-- ST Depression Induced by Exercise: ${result.patientData.oldpeak}
-- Slope of Peak Exercise ST Segment: ${result.patientData.slope}
-- Number of Major Vessels Colored by Fluoroscopy: ${result.patientData.ca}
-- Thal Rate: ${result.patientData.thal}
-
-Prediction Result:
-------------------
-- Risk: ${result.predictionResult.riskPrediction === "yes" ? "High Risk" : "Low Risk"}
-- Probability: ${(result.predictionResult.probability * 100).toFixed(2)}%
-
-Explanation:
-------------
-${result.predictionResult.explanation}
-`;
-
         try {
-            const blob = new Blob([reportContent.trim()], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `HeartWise-Report-${result.id}.txt`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+            const doc = new jsPDF();
+            const { patientData, predictionResult, timestamp, id } = result;
+
+            doc.setFontSize(22);
+            doc.text("HeartWise Diagnosis Report", 10, 20);
+
+            doc.setFontSize(12);
+            doc.text(`Date: ${new Date(timestamp).toLocaleString()}`, 10, 30);
+            doc.line(10, 35, 200, 35);
+
+            doc.setFontSize(16);
+            doc.text("Patient Data", 10, 45);
+            doc.setFontSize(12);
+            let y = 55;
+            const patientDataFields: { label: string; value: any; unit?: string }[] = [
+                { label: "Age", value: patientData.age },
+                { label: "Sex", value: patientData.sex === 1 ? 'Male' : 'Female' },
+                { label: "Chest Pain Type", value: patientData.cp },
+                { label: "Resting Blood Pressure", value: patientData.trestbps, unit: 'mm Hg' },
+                { label: "Serum Cholesterol", value: patientData.chol, unit: 'mg/dl' },
+                { label: "Fasting Blood Sugar > 120 mg/dl", value: patientData.fbs === 1 ? 'True' : 'False' },
+                { label: "Resting ECG Results", value: patientData.restecg },
+                { label: "Maximum Heart Rate Achieved", value: patientData.thalach, unit: 'bpm' },
+                { label: "Exercise Induced Angina", value: patientData.exang === 1 ? 'Yes' : 'No' },
+                { label: "ST Depression Induced by Exercise", value: patientData.oldpeak },
+                { label: "Slope of Peak Exercise ST Segment", value: patientData.slope },
+                { label: "Major Vessels Colored by Fluoroscopy", value: patientData.ca },
+                { label: "Thal Rate", value: patientData.thal },
+            ];
+            
+            patientDataFields.forEach(field => {
+                doc.text(`- ${field.label}: ${field.value} ${field.unit || ''}`, 15, y);
+                y += 7;
+            });
+            
+            y += 5;
+            doc.line(10, y, 200, y);
+            y += 10;
+            
+            doc.setFontSize(16);
+            doc.text("Prediction Result", 10, y);
+            y += 10;
+            doc.setFontSize(12);
+            doc.text(`- Risk: ${predictionResult.riskPrediction === "yes" ? "High Risk" : "Low Risk"}`, 15, y);
+            y += 7;
+            doc.text(`- Probability: ${(predictionResult.probability * 100).toFixed(2)}%`, 15, y);
+            y += 12;
+
+            doc.setFontSize(16);
+            doc.text("Explanation", 10, y);
+            y += 10;
+            doc.setFontSize(12);
+            const explanationLines = doc.splitTextToSize(predictionResult.explanation, 180);
+            doc.text(explanationLines, 15, y);
+            
+            doc.save(`HeartWise-Report-${id}.pdf`);
             
             toast({
                 title: "Download Complete",
@@ -165,7 +182,7 @@ ${result.predictionResult.explanation}
             </Button>
             <Button variant="outline" size="sm" onClick={handleDownload}>
                 <Download className="mr-2 h-4 w-4" />
-                Download
+                Download PDF
             </Button>
        </CardFooter>
     </Card>
