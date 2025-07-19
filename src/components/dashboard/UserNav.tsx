@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, CreditCard } from "lucide-react";
 
 export function UserNav() {
   const router = useRouter();
@@ -40,9 +40,13 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={() => router.push("/profile")}>
             <User className="mr-2 h-4 w-4" />
             <span>Profile</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => router.push("/payment")}>
+            <CreditCard className="mr-2 h-4 w-4" />
+            <span>Billing</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
