@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import jsPDF from "jspdf";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -15,13 +14,13 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { UserNav } from "@/components/dashboard/UserNav";
 import { useToast } from "@/hooks/use-toast";
 import { Download, CreditCard, Loader2, ArrowLeft, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useMounted } from "@/hooks/use-mounted";
 
 const paymentSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -42,13 +41,9 @@ const paymentSchema = z.object({
 export default function PaymentPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const mounted = useMounted();
   const [isPaid, setIsPaid] = useState(false);
-  const [isClient, setIsClient] = useState(false);
   const [formValues, setFormValues] = useState<z.infer<typeof paymentSchema> | null>(null);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const form = useForm<z.infer<typeof paymentSchema>>({
     resolver: zodResolver(paymentSchema),
@@ -71,9 +66,10 @@ export default function PaymentPage() {
     }, 1500);
   };
 
-  const downloadReceipt = () => {
+  const downloadReceipt = async () => {
     if (!formValues) return;
     try {
+      const { default: jsPDF } = await import("jspdf");
       const doc = new jsPDF();
       const receiptId = `RCPT-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
       const date = new Date().toLocaleDateString();
@@ -138,7 +134,9 @@ export default function PaymentPage() {
     }
   };
 
-  if (!isClient) return null;
+  if (!mounted) {
+    return <div className="min-h-screen bg-slate-50" />;
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-slate-50">
@@ -159,11 +157,11 @@ export default function PaymentPage() {
         </div>
         
         <div className="w-full max-w-xl">
-            <Card className="shadow-lg border-none">
+            <Card className="shadow-lg border-none overflow-hidden">
               {!isPaid ? (
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(handlePayment)}>
-                  <CardHeader>
+                  <CardHeader className="bg-muted/30">
                     <div className="flex items-center gap-2 mb-2 text-primary font-semibold">
                       <ShieldCheck className="h-5 w-5" />
                       Encrypted Transaction
@@ -173,7 +171,7 @@ export default function PaymentPage() {
                       All transactions are secure and encrypted.
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-4 pt-6">
                     <FormField
                       control={form.control}
                       name="name"
@@ -181,7 +179,7 @@ export default function PaymentPage() {
                         <FormItem>
                           <FormLabel>Name on Card</FormLabel>
                           <FormControl>
-                            <Input placeholder="John M. Doe" {...field} />
+                            <Input placeholder="John M. Doe" {...field} suppressHydrationWarning />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -196,7 +194,7 @@ export default function PaymentPage() {
                           <FormControl>
                             <div className="relative">
                               <CreditCard className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                              <Input placeholder="0000 0000 0000 0000" className="pl-9" {...field} maxLength={16} />
+                              <Input placeholder="0000 0000 0000 0000" className="pl-9" {...field} maxLength={16} suppressHydrationWarning />
                             </div>
                           </FormControl>
                            <FormMessage />
@@ -211,7 +209,7 @@ export default function PaymentPage() {
                           <FormItem>
                             <FormLabel>Expiry Date</FormLabel>
                             <FormControl>
-                              <Input placeholder="MM/YY" {...field} maxLength={5} />
+                              <Input placeholder="MM/YY" {...field} maxLength={5} suppressHydrationWarning />
                             </FormControl>
                              <FormMessage />
                           </FormItem>
@@ -224,7 +222,7 @@ export default function PaymentPage() {
                           <FormItem>
                             <FormLabel>CVC</FormLabel>
                             <FormControl>
-                              <Input placeholder="123" type="password" {...field} maxLength={4} />
+                              <Input placeholder="123" type="password" {...field} maxLength={4} suppressHydrationWarning />
                             </FormControl>
                              <FormMessage />
                           </FormItem>
@@ -232,7 +230,7 @@ export default function PaymentPage() {
                       />
                     </div>
                   </CardContent>
-                  <CardFooter>
+                  <CardFooter className="bg-muted/10 border-t pt-6">
                     <Button className="w-full text-lg h-12 shadow-md" type="submit" disabled={form.formState.isSubmitting}>
                       {form.formState.isSubmitting ? (
                         <>
@@ -256,7 +254,7 @@ export default function PaymentPage() {
                       Thank you! Your transaction was successful. You can now download your receipt and access full reports.
                     </CardDescription>
                     <div className="flex flex-col gap-3 w-full">
-                      <Button onClick={downloadReceipt} className="w-full h-11" variant="default">
+                      <Button onClick={downloadReceipt} className="w-full h-11 shadow-sm" variant="default">
                           <Download className="mr-2 h-4 w-4" />
                           Download PDF Receipt
                       </Button>

@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { AlertCircle, CheckCircle2, Loader2, Share2, Download, HeartPulse } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import jsPDF from "jspdf";
 
 interface PredictionResultProps {
   result: Diagnosis | null;
@@ -44,10 +43,12 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
         });
     }
 
-    const handleDownload = () => {
+    const handleDownload = async () => {
         if (!result) return;
 
         try {
+            // Dynamically import jsPDF to improve compilation performance
+            const { default: jsPDF } = await import("jspdf");
             const doc = new jsPDF();
             const { patientData, predictionResult, timestamp, id } = result;
 
@@ -147,7 +148,7 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
 
   return (
     <Card
-      className={`shadow-lg ${isHighRisk ? "border-destructive/50" : "border-green-500/50"}`}
+      className={`shadow-lg transition-all duration-300 ${isHighRisk ? "border-destructive/50 ring-1 ring-destructive/20" : "border-green-500/50 ring-1 ring-green-500/20"}`}
     >
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
@@ -160,11 +161,11 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
               </span>
             </CardDescription>
           </div>
-          <Badge variant={isHighRisk ? "destructive" : "success"} suppressHydrationWarning>
+          <Badge variant={isHighRisk ? "destructive" : "success"} suppressHydrationWarning className="px-3 py-1">
             {isHighRisk ? (
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className="h-4 w-4 mr-1" />
             ) : (
-              <CheckCircle2 className="h-4 w-4" />
+              <CheckCircle2 className="h-4 w-4 mr-1" />
             )}
             {isHighRisk ? "High Risk" : "Low Risk"}
           </Badge>
@@ -173,18 +174,18 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
       <CardContent className="space-y-4">
         <div>
           <h3 className="font-semibold text-lg mb-2">AI-Generated Explanation</h3>
-          <p className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg leading-relaxed">
+          <p className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg leading-relaxed border border-border/50">
             {result.predictionResult.explanation}
           </p>
         </div>
       </CardContent>
-       <CardFooter className="flex justify-end gap-2">
+       <CardFooter className="flex justify-end gap-2 pt-2">
             <Button variant="outline" size="sm" onClick={handleShare} suppressHydrationWarning>
-                <Share2 className="h-4 w-4 mr-1" />
+                <Share2 className="h-4 w-4 mr-2" />
                 Share
             </Button>
-            <Button variant="default" size="sm" onClick={handleDownload} suppressHydrationWarning>
-                <Download className="h-4 w-4 mr-1" />
+            <Button variant="default" size="sm" onClick={handleDownload} suppressHydrationWarning className="shadow-sm">
+                <Download className="h-4 w-4 mr-2" />
                 Download PDF
             </Button>
        </CardFooter>
