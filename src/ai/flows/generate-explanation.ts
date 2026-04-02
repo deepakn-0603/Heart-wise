@@ -1,4 +1,4 @@
-// src/ai/flows/generate-explanation.ts
+
 'use server';
 /**
  * @fileOverview A flow that generates an explanation of a heart disease risk prediction.
@@ -36,7 +36,16 @@ const GenerateExplanationOutputSchema = z.object({
 export type GenerateExplanationOutput = z.infer<typeof GenerateExplanationOutputSchema>;
 
 export async function generateExplanation(input: GenerateExplanationInput): Promise<GenerateExplanationOutput> {
-  return generateExplanationFlow(input);
+  try {
+    return await generateExplanationFlow(input);
+  } catch (error) {
+    console.error('AI Flow Error:', error);
+    // Return a fallback explanation if the AI service fails
+    const riskText = input.riskPrediction === 'yes' ? 'increased risk' : 'lower risk';
+    return {
+      explanation: `Based on your metrics (Age: ${input.age}, BP: ${input.trestbps}, Cholesterol: ${input.chol}), you fall into a ${riskText} category. We recommend discussing these results with a healthcare professional for a detailed clinical assessment.`
+    };
+  }
 }
 
 const prompt = ai.definePrompt({
@@ -75,6 +84,9 @@ const generateExplanationFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('AI failed to generate explanation');
+    }
+    return output;
   }
 );

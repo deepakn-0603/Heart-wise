@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -168,7 +169,11 @@ export default function DashboardPage() {
     if (mounted) {
       const savedHistory = localStorage.getItem("diagnosisHistory");
       if (savedHistory) {
-        setHistory(JSON.parse(savedHistory));
+        try {
+          setHistory(JSON.parse(savedHistory));
+        } catch (e) {
+          console.error("Failed to parse history", e);
+        }
       }
     }
   }, [mounted]);
@@ -198,9 +203,11 @@ export default function DashboardPage() {
 
     try {
       const patientData: PatientData = values;
-      const riskPrediction: PredictionResult["riskPrediction"] =
-        Math.random() > 0.5 ? "yes" : "no";
-      const probability = Math.random();
+      
+      // Predict risk based on simple threshold logic for the prototype
+      const riskScore = (patientData.chol / 200) + (patientData.trestbps / 120) + (patientData.age / 50);
+      const riskPrediction: PredictionResult["riskPrediction"] = riskScore > 3.2 ? "yes" : "no";
+      const probability = Math.min(0.95, (riskScore / 5) + (Math.random() * 0.1));
 
       const explanationResult = await generateExplanation({
         ...patientData,
@@ -224,11 +231,17 @@ export default function DashboardPage() {
       setHistory(updatedHistory);
       
       localStorage.setItem("diagnosisHistory", JSON.stringify(updatedHistory));
+      
+      toast({
+        title: "Analysis Complete",
+        description: "Your health report has been generated successfully.",
+      });
     } catch (error) {
+      console.error("Diagnosis error:", error);
       toast({
         variant: "destructive",
-        title: "An Error Occurred",
-        description: "Failed to generate the diagnosis. Please try again later.",
+        title: "Analysis Error",
+        description: "There was an issue processing your data. Please check your connection and try again.",
       });
     } finally {
       setIsLoading(false);
@@ -304,7 +317,7 @@ export default function DashboardPage() {
                                 <FormItem>
                                   <FormLabel>{field.label}</FormLabel>
                                   <Select
-                                    onValueChange={formField.onChange}
+                                    onValueChange={(val) => formField.onChange(Number(val))}
                                     defaultValue={String(formField.value)}
                                   >
                                     <FormControl>
@@ -332,7 +345,7 @@ export default function DashboardPage() {
                         <Button type="submit" disabled={isLoading} className="w-full sm:w-auto" suppressHydrationWarning>
                           {isLoading ? (
                             <>
-                              <Loader2 className="animate-spin" />
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                               Analyzing...
                             </>
                           ) : (
