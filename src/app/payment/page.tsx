@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import jsPDF from "jspdf";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,7 +20,7 @@ import { useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { UserNav } from "@/components/dashboard/UserNav";
 import { useToast } from "@/hooks/use-toast";
-import { Download, CreditCard, Loader2, ArrowLeft } from "lucide-react";
+import { Download, CreditCard, Loader2, ArrowLeft, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 const paymentSchema = z.object({
@@ -43,7 +43,12 @@ export default function PaymentPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isPaid, setIsPaid] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const [formValues, setFormValues] = useState<z.infer<typeof paymentSchema> | null>(null);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const form = useForm<z.infer<typeof paymentSchema>>({
     resolver: zodResolver(paymentSchema),
@@ -55,93 +60,117 @@ export default function PaymentPage() {
     },
   });
 
-  const { formState } = form;
-
   const handlePayment = (values: z.infer<typeof paymentSchema>) => {
     setFormValues(values);
     setTimeout(() => {
       setIsPaid(true);
       toast({
         title: "Payment Successful",
-        description: "Your payment has been processed.",
+        description: "Your payment has been processed securely.",
       });
-      form.reset();
     }, 1500);
   };
 
   const downloadReceipt = () => {
     if (!formValues) return;
-    const doc = new jsPDF();
-    const receiptId = `RCPT-${Date.now()}`;
-    const date = new Date().toLocaleDateString();
+    try {
+      const doc = new jsPDF();
+      const receiptId = `RCPT-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
+      const date = new Date().toLocaleDateString();
 
-    doc.setFontSize(22);
-    doc.text("HeartWise Payment Receipt", 14, 22);
-    
-    doc.setFontSize(12);
-    doc.text(`Receipt ID: ${receiptId}`, 14, 32);
-    doc.text(`Date: ${date}`, 14, 38);
+      // Style Header
+      doc.setFillColor(100, 181, 246); // Brand Primary Color
+      doc.rect(0, 0, 210, 40, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(24);
+      doc.text("HeartWise Receipt", 14, 25);
+      
+      doc.setTextColor(50, 50, 50);
+      doc.setFontSize(12);
+      doc.text(`Receipt ID: ${receiptId}`, 14, 50);
+      doc.text(`Date: ${date}`, 14, 56);
 
-    doc.line(14, 45, 196, 45);
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, 65, 196, 65);
 
-    doc.setFontSize(16);
-    doc.text("Billing To:", 14, 55);
-    doc.setFontSize(12);
-    doc.text(formValues.name, 14, 62);
-    doc.text("patient@example.com", 14, 68);
+      doc.setFontSize(16);
+      doc.text("Billing To:", 14, 75);
+      doc.setFontSize(12);
+      doc.text(formValues.name, 14, 82);
+      doc.text("patient@example.com", 14, 88);
 
-    doc.line(14, 80, 196, 80);
+      doc.line(14, 100, 196, 100);
 
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("Description", 14, 88);
-    doc.text("Amount", 170, 88);
-    doc.setFont("helvetica", "normal");
-    
-    doc.line(14, 92, 196, 92);
-    
-    doc.text("Heart Disease Prediction Report (1x)", 14, 100);
-    doc.text("$50.00", 170, 100);
-    
-    doc.line(14, 110, 196, 110);
-    
-    doc.setFont("helvetica", "bold");
-    doc.text("Total Paid:", 140, 118);
-    doc.text("$50.00", 170, 118);
-    
-    doc.save(`HeartWise-Receipt-${receiptId}.pdf`);
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Description", 14, 110);
+      doc.text("Amount", 170, 110);
+      doc.setFont("helvetica", "normal");
+      
+      doc.line(14, 114, 196, 114);
+      
+      doc.text("Heart Disease Risk Prediction Assessment", 14, 122);
+      doc.text("$50.00", 170, 122);
+      
+      doc.line(14, 130, 196, 130);
+      
+      doc.setFont("helvetica", "bold");
+      doc.text("Total Paid:", 140, 140);
+      doc.text("$50.00", 170, 140);
 
-     toast({
-        title: "Receipt Downloaded",
-        description: "Your receipt has been saved as a PDF.",
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text("Thank you for choosing HeartWise for your health monitoring.", 14, 160);
+      
+      doc.save(`HeartWise-Receipt-${receiptId}.pdf`);
+
+       toast({
+          title: "Receipt Downloaded",
+          description: "Your receipt has been saved as a PDF.",
+        });
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "Download Failed",
+        description: "Could not generate PDF receipt.",
       });
+    }
   };
 
+  if (!isClient) return null;
+
   return (
-    <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur-sm md:px-6">
+    <div className="flex min-h-screen w-full flex-col bg-slate-50">
+      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur-sm md:px-6">
         <Logo />
         <div className="ml-auto">
           <UserNav />
         </div>
       </header>
-       <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8 md:p-10">
-        <div className="mx-auto grid w-full max-w-xl gap-2">
-             <Button variant="outline" onClick={() => router.push('/dashboard')} className="w-fit">
-              <ArrowLeft />
+       <main className="flex-1 p-4 md:p-10 flex flex-col items-center">
+        <div className="w-full max-w-xl mb-6">
+             <Button variant="ghost" onClick={() => router.push('/dashboard')} className="mb-4">
+              <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
             </Button>
-            <h1 className="text-3xl font-semibold mt-4">Secure Payment</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Secure Payment</h1>
+            <p className="text-muted-foreground">Unlock your full medical report and data trends.</p>
         </div>
-        <div className="mx-auto grid w-full max-w-xl items-start gap-6 mt-4">
-            <Card>
+        
+        <div className="w-full max-w-xl">
+            <Card className="shadow-lg border-none">
               {!isPaid ? (
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(handlePayment)}>
                   <CardHeader>
-                    <CardTitle>Credit Card Information</CardTitle>
+                    <div className="flex items-center gap-2 mb-2 text-primary font-semibold">
+                      <ShieldCheck className="h-5 w-5" />
+                      Encrypted Transaction
+                    </div>
+                    <CardTitle>Payment Details</CardTitle>
                     <CardDescription>
-                      Enter your card details. All transactions are secure.
+                      All transactions are secure and encrypted.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -165,7 +194,10 @@ export default function PaymentPage() {
                         <FormItem>
                           <FormLabel>Card Number</FormLabel>
                           <FormControl>
-                            <Input placeholder="1234 5678 9012 3456" {...field} />
+                            <div className="relative">
+                              <CreditCard className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                              <Input placeholder="0000 0000 0000 0000" className="pl-9" {...field} maxLength={16} />
+                            </div>
                           </FormControl>
                            <FormMessage />
                         </FormItem>
@@ -179,7 +211,7 @@ export default function PaymentPage() {
                           <FormItem>
                             <FormLabel>Expiry Date</FormLabel>
                             <FormControl>
-                              <Input placeholder="MM/YY" {...field} />
+                              <Input placeholder="MM/YY" {...field} maxLength={5} />
                             </FormControl>
                              <FormMessage />
                           </FormItem>
@@ -192,7 +224,7 @@ export default function PaymentPage() {
                           <FormItem>
                             <FormLabel>CVC</FormLabel>
                             <FormControl>
-                              <Input placeholder="123" {...field} />
+                              <Input placeholder="123" type="password" {...field} maxLength={4} />
                             </FormControl>
                              <FormMessage />
                           </FormItem>
@@ -201,10 +233,10 @@ export default function PaymentPage() {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button className="w-full" type="submit" disabled={formState.isSubmitting}>
-                      {formState.isSubmitting ? (
+                    <Button className="w-full text-lg h-12 shadow-md" type="submit" disabled={form.formState.isSubmitting}>
+                      {form.formState.isSubmitting ? (
                         <>
-                          <Loader2 className="animate-spin" />
+                          <Loader2 className="animate-spin mr-2" />
                           Processing...
                         </>
                       ) : (
@@ -215,14 +247,23 @@ export default function PaymentPage() {
                 </form>
               </Form>
               ) : (
-                <CardContent className="flex flex-col items-center justify-center p-10 text-center">
-                    <CreditCard className="w-16 h-16 text-green-500 mb-4" />
-                    <CardTitle className="mb-2">Payment Complete!</CardTitle>
-                    <CardDescription className="mb-6">Thank you for your payment. You can now download your receipt.</CardDescription>
-                    <Button onClick={downloadReceipt}>
-                        <Download className="mr-2 h-4 w-4" />
-                        Download Receipt
-                    </Button>
+                <CardContent className="flex flex-col items-center justify-center p-12 text-center animate-in fade-in zoom-in duration-300">
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                      <CheckCircle2 className="w-10 h-10 text-green-600" />
+                    </div>
+                    <CardTitle className="text-2xl mb-2">Payment Confirmed</CardTitle>
+                    <CardDescription className="text-base mb-8">
+                      Thank you! Your transaction was successful. You can now download your receipt and access full reports.
+                    </CardDescription>
+                    <div className="flex flex-col gap-3 w-full">
+                      <Button onClick={downloadReceipt} className="w-full h-11" variant="default">
+                          <Download className="mr-2 h-4 w-4" />
+                          Download PDF Receipt
+                      </Button>
+                      <Button onClick={() => router.push('/dashboard')} variant="outline" className="w-full h-11">
+                          Back to Dashboard
+                      </Button>
+                    </div>
                 </CardContent>
               )}
             </Card>
