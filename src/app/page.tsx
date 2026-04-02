@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -17,16 +17,13 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/Logo";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, Lock } from "lucide-react";
+import { useMounted } from "@/hooks/use-mounted";
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  const mounted = useMounted();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -42,13 +39,12 @@ export default function LoginPage() {
     }, 1000);
   };
 
-  if (!isClient) {
-    return null;
+  if (!mounted) {
+    return <div className="min-h-screen bg-slate-50" />;
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4 relative overflow-hidden">
-      {/* Background blobs for production feel */}
       <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
       <div className="absolute bottom-0 -right-4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
       
@@ -77,6 +73,7 @@ export default function LoginPage() {
                   className="pl-9"
                   required
                   disabled={isLoading}
+                  suppressHydrationWarning
                 />
               </div>
             </div>
@@ -91,10 +88,11 @@ export default function LoginPage() {
                   className="pl-9"
                   disabled={isLoading}
                   placeholder="••••••••"
+                  suppressHydrationWarning
                 />
               </div>
             </div>
-            <Button type="submit" className="w-full shadow-md font-semibold" disabled={isLoading}>
+            <Button type="submit" className="w-full shadow-md font-semibold" disabled={isLoading} suppressHydrationWarning>
               {isLoading ? <Loader2 className="animate-spin" /> : "Sign In"}
             </Button>
           </form>

@@ -1,3 +1,5 @@
+"use client";
+
 import { Diagnosis } from "@/types";
 import {
   Card,
@@ -52,60 +54,48 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
             doc.setFontSize(22);
             doc.text("HeartWise Diagnosis Report", 14, 22);
 
-            doc.setFontSize(12);
-            doc.text(`Report ID: ${id}`, 14, 32);
-            doc.text(`Date: ${new Date(timestamp).toLocaleString()}`, 14, 38);
-            doc.line(14, 45, 196, 45);
+            doc.setFontSize(10);
+            doc.text(`Report ID: ${id}`, 14, 30);
+            doc.text(`Date: ${new Date(timestamp).toLocaleString()}`, 14, 35);
+            doc.line(14, 40, 196, 40);
 
-            doc.setFontSize(16);
-            doc.text("Prediction Result", 14, 55);
-            doc.setFontSize(12);
-            doc.text(`- Risk Assessment: ${predictionResult.riskPrediction === "yes" ? "High Risk" : "Low Risk"}`, 20, 65);
-            doc.text(`- Probability Score: ${(predictionResult.probability * 100).toFixed(2)}%`, 20, 72);
+            doc.setFontSize(14);
+            doc.text("Prediction Result", 14, 50);
+            doc.setFontSize(11);
+            doc.text(`- Risk Assessment: ${predictionResult.riskPrediction === "yes" ? "High Risk" : "Low Risk"}`, 20, 58);
+            doc.text(`- Probability Score: ${(predictionResult.probability * 100).toFixed(2)}%`, 20, 64);
             
-            let y = 82;
-            doc.setFontSize(16);
+            let y = 75;
+            doc.setFontSize(14);
             doc.text("AI-Generated Explanation", 14, y);
             y += 8;
-            doc.setFontSize(12);
+            doc.setFontSize(11);
             const explanationLines = doc.splitTextToSize(predictionResult.explanation, 180);
             doc.text(explanationLines, 20, y);
-            y += explanationLines.length * 5 + 10;
+            y += explanationLines.length * 6 + 10;
             
             doc.line(14, y, 196, y);
             y += 10;
 
-            doc.setFontSize(16);
-            doc.text("Patient Data Used for Analysis", 14, y);
-            y += 10;
-            doc.setFontSize(12);
+            doc.setFontSize(14);
+            doc.text("Patient Data Summary", 14, y);
+            y += 8;
+            doc.setFontSize(11);
 
-            const patientDataFields: { label: string; value: any; }[] = [
-                { label: "Age", value: patientData.age },
-                { label: "Sex", value: patientData.sex === 1 ? 'Male' : 'Female' },
-                { label: "Chest Pain Type", value: patientData.cp },
-                { label: "Resting Blood Pressure", value: `${patientData.trestbps} mm Hg` },
-                { label: "Serum Cholesterol", value: `${patientData.chol} mg/dl` },
-                { label: "Fasting Blood Sugar > 120 mg/dl", value: patientData.fbs === 1 ? 'True' : 'False' },
-                { label: "Resting ECG", value: patientData.restecg },
-                { label: "Max Heart Rate", value: `${patientData.thalach} bpm` },
-                { label: "Exercise Angina", value: patientData.exang === 1 ? 'Yes' : 'No' },
-                { label: "ST Depression", value: patientData.oldpeak },
-                { label: "Slope of ST Segment", value: patientData.slope },
-                { label: "Major Vessels (Fluoroscopy)", value: patientData.ca },
-                { label: "Thal Rate", value: patientData.thal },
+            const dataPoints = [
+                `Age: ${patientData.age}`,
+                `Sex: ${patientData.sex === 1 ? 'Male' : 'Female'}`,
+                `Resting BP: ${patientData.trestbps} mm Hg`,
+                `Cholesterol: ${patientData.chol} mg/dl`,
+                `Max Heart Rate: ${patientData.thalach} bpm`,
             ];
-            
-            patientDataFields.forEach((field, index) => {
-                doc.text(`${field.label}: ${field.value}`, 20, y);
-                y += 7;
-                if (index === 6) { // column break
-                    y = 137;
-                    doc.text(`${patientDataFields[7].label}: ${patientDataFields[7].value}`, 110, y-7);
-                }
+
+            dataPoints.forEach((point) => {
+                doc.text(point, 20, y);
+                y += 6;
             });
             
-            doc.save(`HeartWise-Report-${id}.pdf`);
+            doc.save(`HeartWise-Report-${id.substring(0, 8)}.pdf`);
             
             toast({
                 title: "Download Complete",
@@ -170,11 +160,11 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
               </span>
             </CardDescription>
           </div>
-          <Badge variant={isHighRisk ? "destructive" : "success"}>
+          <Badge variant={isHighRisk ? "destructive" : "success"} suppressHydrationWarning>
             {isHighRisk ? (
-              <AlertCircle />
+              <AlertCircle className="h-4 w-4" />
             ) : (
-              <CheckCircle2 />
+              <CheckCircle2 className="h-4 w-4" />
             )}
             {isHighRisk ? "High Risk" : "Low Risk"}
           </Badge>
@@ -189,12 +179,12 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
         </div>
       </CardContent>
        <CardFooter className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={handleShare}>
-                <Share2 />
+            <Button variant="outline" size="sm" onClick={handleShare} suppressHydrationWarning>
+                <Share2 className="h-4 w-4 mr-1" />
                 Share
             </Button>
-            <Button variant="default" size="sm" onClick={handleDownload}>
-                <Download/>
+            <Button variant="default" size="sm" onClick={handleDownload} suppressHydrationWarning>
+                <Download className="h-4 w-4 mr-1" />
                 Download PDF
             </Button>
        </CardFooter>

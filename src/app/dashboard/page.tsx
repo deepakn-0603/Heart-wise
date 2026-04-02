@@ -38,6 +38,7 @@ import { HistoryTable } from "@/components/dashboard/HistoryTable";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
+import { useMounted } from "@/hooks/use-mounted";
 
 const formSchema = z.object({
   age: z.coerce.number().min(1, "Age is required").max(120),
@@ -161,16 +162,16 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentResult, setCurrentResult] = useState<Diagnosis | null>(null);
   const [history, setHistory] = useState<Diagnosis[]>([]);
-  const [isClient, setIsClient] = useState(false);
+  const mounted = useMounted();
 
   useEffect(() => {
-    setIsClient(true);
-    // Load history from localStorage if it exists
-    const savedHistory = localStorage.getItem("diagnosisHistory");
-    if (savedHistory) {
-      setHistory(JSON.parse(savedHistory));
+    if (mounted) {
+      const savedHistory = localStorage.getItem("diagnosisHistory");
+      if (savedHistory) {
+        setHistory(JSON.parse(savedHistory));
+      }
     }
-  }, []);
+  }, [mounted]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -208,7 +209,7 @@ export default function DashboardPage() {
       });
 
       const newDiagnosis: Diagnosis = {
-        id: new Date().toISOString(),
+        id: crypto.randomUUID(),
         timestamp: new Date().toISOString(),
         patientData,
         predictionResult: {
@@ -222,21 +223,20 @@ export default function DashboardPage() {
       setCurrentResult(newDiagnosis);
       setHistory(updatedHistory);
       
-      if (typeof window !== 'undefined') {
-        localStorage.setItem("diagnosisHistory", JSON.stringify(updatedHistory));
-      }
-
+      localStorage.setItem("diagnosisHistory", JSON.stringify(updatedHistory));
     } catch (error) {
-      console.error("Failed to get diagnosis:", error);
       toast({
         variant: "destructive",
         title: "An Error Occurred",
-        description:
-          "Failed to generate the diagnosis. Please try again later.",
+        description: "Failed to generate the diagnosis. Please try again later.",
       });
     } finally {
       setIsLoading(false);
     }
+  }
+
+  if (!mounted) {
+    return <div className="min-h-screen bg-muted/40" />;
   }
 
   return (
@@ -287,6 +287,7 @@ export default function DashboardPage() {
                                       placeholder={field.placeholder}
                                       {...formField}
                                       step="any"
+                                      suppressHydrationWarning
                                     />
                                   </FormControl>
                                   <FormMessage />
@@ -307,7 +308,7 @@ export default function DashboardPage() {
                                     defaultValue={String(formField.value)}
                                   >
                                     <FormControl>
-                                      <SelectTrigger>
+                                      <SelectTrigger suppressHydrationWarning>
                                         <SelectValue placeholder="Select an option" />
                                       </SelectTrigger>
                                     </FormControl>
@@ -328,7 +329,7 @@ export default function DashboardPage() {
                             />
                           ))}
                         </div>
-                        <Button type="submit" disabled={isLoading || !isClient} className="w-full sm:w-auto">
+                        <Button type="submit" disabled={isLoading} className="w-full sm:w-auto" suppressHydrationWarning>
                           {isLoading ? (
                             <>
                               <Loader2 className="animate-spin" />
@@ -361,7 +362,7 @@ export default function DashboardPage() {
               result={currentResult}
               isLoading={isLoading}
             />
-            {isClient && <HealthChart data={currentResult?.patientData ?? history[0]?.patientData ?? null} />}
+            <HealthChart data={currentResult?.patientData ?? history[0]?.patientData ?? null} />
           </div>
         </div>
       </main>
