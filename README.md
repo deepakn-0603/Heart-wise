@@ -1,5 +1,5 @@
 
-#❤️ HeartWise – AI-Powered Heart Disease Prediction Platform
+# ❤️ HeartWise – AI-Powered Heart Disease Prediction Platform
 # 📌 Overview
 
 HeartWise is a full-stack web application that predicts the risk of heart disease using machine learning models and enhances interpretability using Generative AI.
