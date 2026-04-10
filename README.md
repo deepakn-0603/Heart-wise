@@ -1,12 +1,12 @@
 
 #❤️ HeartWise – AI-Powered Heart Disease Prediction Platform
-📌 Overview
+# 📌 Overview
 
 HeartWise is a full-stack web application that predicts the risk of heart disease using machine learning models and enhances interpretability using Generative AI.
 
 The system allows users to input clinical data, receive real-time predictions, and understand results through AI-generated, patient-friendly explanations.
 
-🚀 Features
+# 🚀 Features
 🧾 Patient Data Input – Collect clinical parameters like age, cholesterol, BP, etc.
 🧠 ML-Based Prediction – Predict heart disease risk using trained models
 📊 Probability Score – Displays likelihood of disease
@@ -42,18 +42,18 @@ Fallback mechanism ensures reliability if AI fails
   ML model files
 
 
-#Installation & Setup
+# Installation & Setup
 Clone the repo 
-git clone https://github.com/your-username/heartwise.git
+git clone https://github.com/your-username/heartwise.git 
 cd heartwise
 
-#Install dependencies
+# Install dependencies
 npm install
 
-#Setup Environment Variables
+# Setup Environment Variables
 Create a .env.local file:
 # Add your GenAI / API keys here
 GENKIT_API_KEY=your_api_key
 
-Run the Development Server
+# Run the Development Server
 npm run dev
