@@ -57,3 +57,14 @@ GENKIT_API_KEY=your_api_key
 
 # Run the Development Server
 npm run dev
+
+# 🧠 How It Works
+User enters medical data
+Data is processed and passed to ML model
+Model predicts:
+Risk (Yes/No)
+Probability score
+GenAI generates explanation:
+Uses structured prompt
+Returns human-readable reasoning
+Results are displayed and stored
