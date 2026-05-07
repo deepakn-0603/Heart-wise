@@ -101,7 +101,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgres://postgres:@localhost:5432/heartwise_db',
+        default='postgres:postgresql://heart_wise_db_user:fu0umODMgio5Ls6pYE1kG5iHBKV8EiB7@dpg-d7u5oov7f7vs73emgiog-a/heart_wise_db',
         conn_max_age=600
     )
 }
