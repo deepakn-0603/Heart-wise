@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-zap9!7helz@+*xo*1nq51&v8kz3*j6@s8*5s^j%!b8hb_@j%s)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -45,6 +45,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -59,6 +60,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:9002",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:9002",
+     "https://heart-wise-eight.vercel.app"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -149,3 +151,4 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
