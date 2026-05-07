@@ -1,7 +1,7 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -40,6 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { useMounted } from "@/hooks/use-mounted";
+import { saveDiagnosis, getUserDiagnoses } from "@/lib/api";
 
 const formSchema = z.object({
   age: z.coerce.number().min(1, "Age is required").max(120),
@@ -159,24 +160,119 @@ const formFields = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [currentResult, setCurrentResult] = useState<Diagnosis | null>(null);
   const [history, setHistory] = useState<Diagnosis[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [isChecking, setIsChecking] = useState(true);
   const mounted = useMounted();
 
+  // Check authentication and load user data
   useEffect(() => {
-    if (mounted) {
+    if (!mounted) return;
+
+    console.log("🔍 Dashboard mounted, checking authentication...");
+    setIsChecking(true);
+
+    try {
+      const storedUser = localStorage.getItem("user");
+      console.log("📦 Stored user:", storedUser);
+      console.log("storedUser",storedUser)
+      if (!storedUser) {
+        console.log("❌ No user found in localStorage, redirecting to login");
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to access the dashboard.",
+          variant: "destructive",
+        });
+        router.push("/");
+        return;
+      }
+
+      const parsedUser = JSON.parse(storedUser);
+      console.log("✅ User authenticated:", parsedUser);
+      setUser(parsedUser);
+
+      // Load diagnosis history from backend
+      loadDiagnosisHistory(parsedUser.id);
+    } catch (e) {
+      console.error("❌ Error parsing user data:", e);
+      localStorage.removeItem("user");
+      toast({
+        title: "Session Error",
+        description: "Your session has expired. Please log in again.",
+        variant: "destructive",
+      });
+      router.push("/");
+    } finally {
+      setIsChecking(false);
+    }
+  }, [mounted]);
+
+  // Load diagnosis history from backend
+  const loadDiagnosisHistory = async (userId: number) => {
+    setIsLoadingHistory(true);
+    try {
+      console.log("📥 Loading diagnosis history for user:", userId);
+      const diagnoses = await getUserDiagnoses(userId);
+
+      console.log("📋 Diagnoses received:", diagnoses);
+
+      // Convert backend format to frontend format
+      const formattedHistory: Diagnosis[] = diagnoses.map((d) => ({
+        id: d.id.toString(),
+        timestamp: d.created_at,
+        patientData: {
+          age: d.age,
+          sex: d.sex,
+          cp: d.cp,
+          trestbps: d.trestbps,
+          chol: d.chol,
+          fbs: d.fbs,
+          restecg: d.restecg,
+          thalach: d.thalach,
+          exang: d.exang,
+          oldpeak: d.oldpeak,
+          slope: d.slope,
+          ca: d.ca,
+          thal: d.thal,
+        },
+        predictionResult: {
+          riskPrediction: d.risk_prediction as "yes" | "no",
+          probability: d.probability,
+          explanation: d.explanation,
+        },
+      }));
+
+      console.log("✅ History loaded successfully:", formattedHistory.length);
+      setHistory(formattedHistory);
+    } catch (error) {
+      console.error("⚠️ Failed to load history:", error);
+      toast({
+        title: "Warning",
+        description: "Could not load diagnosis history from server.",
+        variant: "destructive",
+      });
+
+      // Fallback to localStorage if backend fails
       const savedHistory = localStorage.getItem("diagnosisHistory");
       if (savedHistory) {
         try {
-          setHistory(JSON.parse(savedHistory));
+          const parsed = JSON.parse(savedHistory);
+          console.log("📚 Using local history as fallback:", parsed.length);
+          setHistory(parsed);
         } catch (e) {
-          console.error("Failed to parse history", e);
+          console.error("Failed to parse local history", e);
+          setHistory([]);
         }
       }
+    } finally {
+      setIsLoadingHistory(false);
     }
-  }, [mounted]);
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -198,26 +294,55 @@ export default function DashboardPage() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "User not authenticated. Please log in again.",
+        variant: "destructive",
+      });
+      router.push("/");
+      return;
+    }
+
     setIsLoading(true);
     setCurrentResult(null);
 
     try {
       const patientData: PatientData = values;
-      
-      // Predict risk based on simple threshold logic for the prototype
-      const riskScore = (patientData.chol / 200) + (patientData.trestbps / 120) + (patientData.age / 50);
-      const riskPrediction: PredictionResult["riskPrediction"] = riskScore > 3.2 ? "yes" : "no";
-      const probability = Math.min(0.95, (riskScore / 5) + (Math.random() * 0.1));
 
+      // Calculate risk based on simple threshold logic
+      const riskScore =
+        patientData.chol / 200 + patientData.trestbps / 120 + patientData.age / 50;
+      const riskPrediction: PredictionResult["riskPrediction"] =
+        riskScore > 3.2 ? "yes" : "no";
+      const probability = Math.min(0.95, riskScore / 5 + Math.random() * 0.1);
+
+      console.log("📊 Diagnosis data:", { riskScore, riskPrediction, probability });
+
+      // Generate AI explanation
       const explanationResult = await generateExplanation({
         ...patientData,
         riskPrediction,
         probability,
       });
 
+      console.log("🤖 AI explanation generated");
+
+      // Save to backend database
+      const savedDiagnosis = await saveDiagnosis({
+        user_id: user.id,
+        ...patientData,
+        risk_prediction: riskPrediction,
+        probability: probability,
+        explanation: explanationResult.explanation,
+      });
+
+      console.log("💾 Diagnosis saved to backend:", savedDiagnosis);
+
+      // Create diagnosis object for frontend
       const newDiagnosis: Diagnosis = {
-        id: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
+        id: savedDiagnosis.diagnosis.id.toString(),
+        timestamp: savedDiagnosis.diagnosis.created_at,
         patientData,
         predictionResult: {
           riskPrediction,
@@ -225,31 +350,46 @@ export default function DashboardPage() {
           explanation: explanationResult.explanation,
         },
       };
-      
+
+      // Update state
       const updatedHistory = [newDiagnosis, ...history];
       setCurrentResult(newDiagnosis);
       setHistory(updatedHistory);
-      
+
+      // Also save to localStorage as backup
       localStorage.setItem("diagnosisHistory", JSON.stringify(updatedHistory));
-      
+
+      console.log("✅ Diagnosis complete");
+
       toast({
         title: "Analysis Complete",
-        description: "Your health report has been generated successfully.",
+        description: "Your health report has been saved successfully.",
       });
     } catch (error) {
-      console.error("Diagnosis error:", error);
+      console.error("❌ Diagnosis error:", error);
       toast({
         variant: "destructive",
         title: "Analysis Error",
-        description: "There was an issue processing your data. Please check your connection and try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "There was an issue processing your data. Please try again.",
       });
     } finally {
       setIsLoading(false);
     }
   }
 
-  if (!mounted) {
-    return <div className="min-h-screen bg-muted/40" />;
+  // Show loading screen while checking authentication
+  if (!mounted || isChecking || !user) {
+    return (
+      <div className="min-h-screen bg-muted/40 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -263,13 +403,23 @@ export default function DashboardPage() {
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="mx-auto grid w-full max-w-6xl gap-2">
           <h1 className="text-3xl font-semibold">Heart Disease Prediction</h1>
+          <p className="text-sm text-muted-foreground">
+            Welcome back, {user.name || user.email}
+          </p>
         </div>
         <div className="mx-auto grid w-full max-w-6xl items-start gap-6 md:grid-cols-[1fr_380px]">
           <div className="grid gap-6">
             <Tabs defaultValue="diagnosis">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="diagnosis">New Diagnosis</TabsTrigger>
-                <TabsTrigger value="history">Diagnosis History</TabsTrigger>
+                <TabsTrigger value="history">
+                  Diagnosis History
+                  {history.length > 0 && (
+                    <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                      {history.length}
+                    </span>
+                  )}
+                </TabsTrigger>
               </TabsList>
               <TabsContent value="diagnosis">
                 <Card>
@@ -317,7 +467,9 @@ export default function DashboardPage() {
                                 <FormItem>
                                   <FormLabel>{field.label}</FormLabel>
                                   <Select
-                                    onValueChange={(val) => formField.onChange(Number(val))}
+                                    onValueChange={(val) =>
+                                      formField.onChange(Number(val))
+                                    }
                                     defaultValue={String(formField.value)}
                                   >
                                     <FormControl>
@@ -342,7 +494,12 @@ export default function DashboardPage() {
                             />
                           ))}
                         </div>
-                        <Button type="submit" disabled={isLoading} className="w-full sm:w-auto" suppressHydrationWarning>
+                        <Button
+                          type="submit"
+                          disabled={isLoading}
+                          className="w-full sm:w-auto"
+                          suppressHydrationWarning
+                        >
                           {isLoading ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -358,14 +515,32 @@ export default function DashboardPage() {
                 </Card>
               </TabsContent>
               <TabsContent value="history">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Diagnosis History</CardTitle>
-                        <CardDescription>Review past diagnosis results.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <HistoryTable history={history} />
-                    </CardContent>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Diagnosis History</CardTitle>
+                    <CardDescription>
+                      Review past diagnosis results from the database.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingHistory ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        <span className="ml-2 text-sm text-muted-foreground">
+                          Loading history...
+                        </span>
+                      </div>
+                    ) : history.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>No diagnosis history yet.</p>
+                        <p className="text-sm mt-2">
+                          Complete a diagnosis to see it here.
+                        </p>
+                      </div>
+                    ) : (
+                      <HistoryTable history={history} />
+                    )}
+                  </CardContent>
                 </Card>
               </TabsContent>
             </Tabs>
@@ -375,7 +550,11 @@ export default function DashboardPage() {
               result={currentResult}
               isLoading={isLoading}
             />
-            <HealthChart data={currentResult?.patientData ?? history[0]?.patientData ?? null} />
+            <HealthChart
+              data={
+                currentResult?.patientData ?? history[0]?.patientData ?? null
+              }
+            />
           </div>
         </div>
       </main>

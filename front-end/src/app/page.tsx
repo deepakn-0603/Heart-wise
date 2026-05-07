@@ -20,23 +20,72 @@ import { Loader2, Mail, Lock } from "lucide-react";
 import { useMounted } from "@/hooks/use-mounted";
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const mounted = useMounted();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
-    
-    // Mock authentication
-    setTimeout(() => {
-      toast({
-        title: "Login Successful",
-        description: "Redirecting to your dashboard...",
+
+    try {
+      console.log("📤 Sending login request:", { email, password });
+      
+      const response = await fetch("http://127.0.0.1:8000/api/login/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
       });
-      router.push("/dashboard");
-    }, 1000);
+
+      const data = await response.json();
+      console.log("📥 Login response:", data);
+      
+      if (response.ok) {
+        console.log("✅ Login successful, storing user data...");
+        
+        // ✅ STORE USER DATA IN LOCALSTORAGE
+        localStorage.setItem("user", JSON.stringify(data.user));
+        
+        console.log("💾 User stored in localStorage:", data.user);
+        
+        toast({
+          title: "Login Successful",
+          description: "Redirecting to your dashboard...",
+        });
+        
+        // Clear form
+        setEmail("");
+        setPassword("");
+        
+        // Redirect after a short delay
+        setTimeout(() => {
+          console.log("🚀 Redirecting to dashboard...");
+          router.push("/dashboard");
+        }, 1000);
+        
+      } else {
+        console.log("❌ Login failed:", data);
+        toast({
+          title: "Login Failed",
+          description: data.error || data.detail || "An error occurred during login.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error during login:", error);
+      toast({
+        title: "Login Failed",
+        description: "An error occurred while trying to log in.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!mounted) {
@@ -70,6 +119,8 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   placeholder="patient@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="pl-9"
                   required
                   disabled={isLoading}
@@ -84,6 +135,8 @@ export default function LoginPage() {
                 <Input
                   id="password"
                   type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   className="pl-9"
                   disabled={isLoading}
@@ -92,8 +145,20 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-            <Button type="submit" className="w-full shadow-md font-semibold" disabled={isLoading} suppressHydrationWarning>
-              {isLoading ? <Loader2 className="animate-spin" /> : "Sign In"}
+            <Button 
+              type="submit" 
+              className="w-full shadow-md font-semibold" 
+              disabled={isLoading} 
+              suppressHydrationWarning
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
+              )}
             </Button>
           </form>
         </CardContent>

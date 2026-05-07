@@ -24,22 +24,56 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
+  // 🟢 1. Added State to hold the user's typing
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  // 🟢 2. Replaced Mock setTimeout with REAL Backend Request
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
-    
-    // Mock registration
-    setTimeout(() => {
-      toast({
-        title: "Registration Successful",
-        description: "You can now log in with your new account.",
+
+    try {
+      // Note: Make sure this URL matches your Django urls.py exactly!
+      // If your login was /api/login/, your register is probably /api/register/
+      const response = await fetch("http://127.0.0.1:8000/api/register/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, password }),
       });
-      router.push("/");
-    }, 1500);
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Registration Successful",
+          description: "You can now log in with your new account.",
+        });
+        router.push("/");
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Registration Failed",
+          description: data.error || "Could not register user.",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Network Error",
+        description: "Could not connect to the backend.",
+      });
+      console.error("Fetch error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!isClient) {
@@ -69,7 +103,17 @@ export default function RegisterPage() {
               <Label htmlFor="name">Full Name</Label>
               <div className="relative">
                 <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input id="name" type="text" placeholder="John Doe" className="pl-9" required disabled={isLoading} />
+                <Input 
+                  id="name" 
+                  type="text" 
+                  placeholder="John Doe" 
+                  className="pl-9" 
+                  required 
+                  disabled={isLoading} 
+                  // 🟢 Bind input to state
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
               </div>
             </div>
             <div className="space-y-2">
@@ -83,6 +127,9 @@ export default function RegisterPage() {
                   className="pl-9"
                   required
                   disabled={isLoading}
+                  // 🟢 Bind input to state
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
             </div>
@@ -90,7 +137,17 @@ export default function RegisterPage() {
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input id="password" type="password" required disabled={isLoading} className="pl-9" placeholder="••••••••" />
+                <Input 
+                  id="password" 
+                  type="password" 
+                  required 
+                  disabled={isLoading} 
+                  className="pl-9" 
+                  placeholder="••••••••" 
+                  // 🟢 Bind input to state
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
               </div>
             </div>
             <Button type="submit" className="w-full shadow-md font-semibold" disabled={isLoading}>
