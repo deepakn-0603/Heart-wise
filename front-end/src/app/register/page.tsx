@@ -41,7 +41,7 @@ export default function RegisterPage() {
     try {
       // Note: Make sure this URL matches your Django urls.py exactly!
       // If your login was /api/login/, your register is probably /api/register/
-      const response = await fetch("https://heart-wise-ihpx.onrender.com/api/login//api/register/", {
+      const response = await fetch("https://heart-wise-ihpx.onrender.com/api/register/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
