@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -18,6 +16,7 @@ import { Logo } from "@/components/Logo";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, Lock } from "lucide-react";
 import { useMounted } from "@/hooks/use-mounted";
+import { API_URL } from "@/lib/api";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -32,9 +31,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      console.log("📤 Sending login request:", { email, password });
-      
-      const response = await fetch("https://heart-wise-ihpx.onrender.com/api/login/", {
+      const response = await fetch(`${API_URL}/api/login/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -43,33 +40,23 @@ export default function LoginPage() {
       });
 
       const data = await response.json();
-      console.log("📥 Login response:", data);
       
       if (response.ok) {
-        console.log("✅ Login successful, storing user data...");
-        
-        // ✅ STORE USER DATA IN LOCALSTORAGE
         localStorage.setItem("user", JSON.stringify(data.user));
-        
-        console.log("💾 User stored in localStorage:", data.user);
         
         toast({
           title: "Login Successful",
           description: "Redirecting to your dashboard...",
         });
         
-        // Clear form
         setEmail("");
         setPassword("");
         
-        // Redirect after a short delay
         setTimeout(() => {
-          console.log("🚀 Redirecting to dashboard...");
           router.push("/dashboard");
         }, 1000);
         
       } else {
-        console.log("❌ Login failed:", data);
         toast({
           title: "Login Failed",
           description: data.error || data.detail || "An error occurred during login.",
@@ -77,7 +64,6 @@ export default function LoginPage() {
         });
       }
     } catch (error) {
-      console.error("❌ Error during login:", error);
       toast({
         title: "Login Failed",
         description: "An error occurred while trying to log in.",

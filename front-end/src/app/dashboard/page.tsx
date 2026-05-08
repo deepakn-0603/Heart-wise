@@ -179,10 +179,8 @@ export default function DashboardPage() {
 
     try {
       const storedUser = localStorage.getItem("user");
-      console.log("📦 Stored user:", storedUser);
-      console.log("storedUser",storedUser)
+
       if (!storedUser) {
-        console.log("❌ No user found in localStorage, redirecting to login");
         toast({
           title: "Authentication Required",
           description: "Please log in to access the dashboard.",
@@ -193,13 +191,10 @@ export default function DashboardPage() {
       }
 
       const parsedUser = JSON.parse(storedUser);
-      console.log("✅ User authenticated:", parsedUser);
       setUser(parsedUser);
 
-      // Load diagnosis history from backend
       loadDiagnosisHistory(parsedUser.id);
     } catch (e) {
-      console.error("❌ Error parsing user data:", e);
       localStorage.removeItem("user");
       toast({
         title: "Session Error",
@@ -212,16 +207,11 @@ export default function DashboardPage() {
     }
   }, [mounted]);
 
-  // Load diagnosis history from backend
   const loadDiagnosisHistory = async (userId: number) => {
     setIsLoadingHistory(true);
     try {
-      console.log("📥 Loading diagnosis history for user:", userId);
       const diagnoses = await getUserDiagnoses(userId);
 
-      console.log("📋 Diagnoses received:", diagnoses);
-
-      // Convert backend format to frontend format
       const formattedHistory: Diagnosis[] = diagnoses.map((d) => ({
         id: d.id.toString(),
         timestamp: d.created_at,
@@ -247,25 +237,20 @@ export default function DashboardPage() {
         },
       }));
 
-      console.log("✅ History loaded successfully:", formattedHistory.length);
       setHistory(formattedHistory);
     } catch (error) {
-      console.error("⚠️ Failed to load history:", error);
       toast({
         title: "Warning",
         description: "Could not load diagnosis history from server.",
         variant: "destructive",
       });
 
-      // Fallback to localStorage if backend fails
       const savedHistory = localStorage.getItem("diagnosisHistory");
       if (savedHistory) {
         try {
           const parsed = JSON.parse(savedHistory);
-          console.log("📚 Using local history as fallback:", parsed.length);
           setHistory(parsed);
         } catch (e) {
-          console.error("Failed to parse local history", e);
           setHistory([]);
         }
       }
@@ -310,25 +295,20 @@ export default function DashboardPage() {
     try {
       const patientData: PatientData = values;
 
-      // Calculate risk based on simple threshold logic
       const riskScore =
         patientData.chol / 200 + patientData.trestbps / 120 + patientData.age / 50;
       const riskPrediction: PredictionResult["riskPrediction"] =
         riskScore > 3.2 ? "yes" : "no";
       const probability = Math.min(0.95, riskScore / 5 + Math.random() * 0.1);
 
-      console.log("📊 Diagnosis data:", { riskScore, riskPrediction, probability });
 
-      // Generate AI explanation
       const explanationResult = await generateExplanation({
         ...patientData,
         riskPrediction,
         probability,
       });
 
-      console.log("🤖 AI explanation generated");
 
-      // Save to backend database
       const savedDiagnosis = await saveDiagnosis({
         user_id: user.id,
         ...patientData,
@@ -337,9 +317,7 @@ export default function DashboardPage() {
         explanation: explanationResult.explanation,
       });
 
-      console.log("💾 Diagnosis saved to backend:", savedDiagnosis);
 
-      // Create diagnosis object for frontend
       const newDiagnosis: Diagnosis = {
         id: savedDiagnosis.diagnosis.id.toString(),
         timestamp: savedDiagnosis.diagnosis.created_at,
@@ -356,17 +334,13 @@ export default function DashboardPage() {
       setCurrentResult(newDiagnosis);
       setHistory(updatedHistory);
 
-      // Also save to localStorage as backup
       localStorage.setItem("diagnosisHistory", JSON.stringify(updatedHistory));
-
-      console.log("✅ Diagnosis complete");
 
       toast({
         title: "Analysis Complete",
         description: "Your health report has been saved successfully.",
       });
     } catch (error) {
-      console.error("❌ Diagnosis error:", error);
       toast({
         variant: "destructive",
         title: "Analysis Error",
@@ -380,7 +354,6 @@ export default function DashboardPage() {
     }
   }
 
-  // Show loading screen while checking authentication
   if (!mounted || isChecking || !user) {
     return (
       <div className="min-h-screen bg-muted/40 flex items-center justify-center">

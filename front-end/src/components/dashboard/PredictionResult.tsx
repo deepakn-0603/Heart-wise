@@ -47,7 +47,6 @@ export function PredictionResult({ result, isLoading }: PredictionResultProps) {
         if (!result) return;
 
         try {
-            // Dynamically import jsPDF to improve compilation performance
             const { default: jsPDF } = await import("jspdf");
             const doc = new jsPDF();
             const { patientData, predictionResult, timestamp, id } = result;

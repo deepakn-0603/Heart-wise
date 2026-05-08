@@ -13,7 +13,6 @@ interface HealthChartProps {
   data: PatientData | null;
 }
 
-// These are example "healthy" values. In a real app, these would be more nuanced.
 const healthyRanges = {
   trestbps: 120,
   chol: 200,
