@@ -187,7 +187,7 @@ export default function RegisterPage() {
     setOtpLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/send-otp/`, {
+      const response = await fetch(`${API_URL}/api/send-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -229,7 +229,7 @@ export default function RegisterPage() {
     setOtpLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/verify-otp/`, {
+      const response = await fetch(`${API_URL}/api/verify-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp }),
@@ -307,7 +307,7 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {;
-      const response = await fetch(`${API_URL}/register/`, {
+      const response = await fetch(`${API_URL}/api/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
