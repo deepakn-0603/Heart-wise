@@ -1,3 +1,5 @@
+"use client";
+
 import { Diagnosis } from "@/types";
 import {
   Table,

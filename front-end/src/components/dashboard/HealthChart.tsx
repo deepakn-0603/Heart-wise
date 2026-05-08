@@ -1,3 +1,5 @@
+"use client";
+
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
   Card,
@@ -13,7 +15,6 @@ interface HealthChartProps {
   data: PatientData | null;
 }
 
-// These are example "healthy" values. In a real app, these would be more nuanced.
 const healthyRanges = {
   trestbps: 120,
   chol: 200,

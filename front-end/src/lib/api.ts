@@ -1,8 +1,5 @@
-const API_URL = 'https://heart-wise-ihpx.onrender.com/api';
-// process.env.NEXT_PUBLIC_API_URL || 
-// ... (keep existing interfaces and functions)
+export const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-// NEW: Diagnosis Interfaces
 export interface DiagnosisData {
   user_id: number;
   age: number;
