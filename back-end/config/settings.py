@@ -55,7 +55,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'config.urls'
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ORIGINS')
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ORIGINS').split(',') if os.getenv('CORS_ORIGINS') else []
 
 CORS_ALLOW_CREDENTIALS = True
 
