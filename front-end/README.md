@@ -42,7 +42,7 @@ Fallback mechanism ensures reliability if AI fails
   ML model files
 
 
-# Installation & Setup
+# Installation and Setup
 Clone the repo 
 git clone https://github.com/your-username/heartwise.git 
 cd heartwise
