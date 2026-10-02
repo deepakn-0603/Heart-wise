@@ -50,6 +50,7 @@ export async function generateExplanation(input: GenerateExplanationInput): Prom
 
 const prompt = ai.definePrompt({
   name: 'generateExplanationPrompt',
+  model: 'googleai/gemini-2.5-flash',
   input: {schema: GenerateExplanationInputSchema},
   output: {schema: GenerateExplanationOutputSchema},
   prompt: `You are an expert medical professional explaining heart disease risk predictions to patients.
