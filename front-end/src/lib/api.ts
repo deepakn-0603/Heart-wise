@@ -44,7 +44,7 @@ export interface DiagnosisResponse {
 // NEW: Save Diagnosis
 export const saveDiagnosis = async (data: DiagnosisData): Promise<{ message: string; diagnosis: DiagnosisResponse }> => {
   try {
-    const response = await fetch(`${API_URL}/diagnosis/`, {
+    const response = await fetch(`${API_URL}/api/diagnosis/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -70,7 +70,7 @@ export const saveDiagnosis = async (data: DiagnosisData): Promise<{ message: str
 // NEW: Get User Diagnosis History
 export const getUserDiagnoses = async (userId: number): Promise<DiagnosisResponse[]> => {
   try {
-    const response = await fetch(`${API_URL}/diagnosis/${userId}/`);
+    const response = await fetch(`${API_URL}/api/diagnosis/${userId}/`);
     const data = await response.json();
 
     if (!response.ok) {
