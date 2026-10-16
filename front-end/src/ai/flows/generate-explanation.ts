@@ -31,7 +31,9 @@ const GenerateExplanationInputSchema = z.object({
 export type GenerateExplanationInput = z.infer<typeof GenerateExplanationInputSchema>;
 
 const GenerateExplanationOutputSchema = z.object({
-  explanation: z.string().describe('The explanation of the heart disease risk prediction.'),
+  explanation: z.string().describe(
+    'The explanation of the heart disease risk prediction formatted using Markdown. You MUST use bullet points and **bold** text to break up information. Do not return a single wall of text.'
+  ),
 });
 export type GenerateExplanationOutput = z.infer<typeof GenerateExplanationOutputSchema>;
 
@@ -55,7 +57,14 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateExplanationOutputSchema},
   prompt: `You are an expert medical professional explaining heart disease risk predictions to patients.
 
-  Based on the following patient data and the heart disease risk prediction, provide a clear and concise explanation of why the patient received this prediction. Explain the factors that contributed to the risk and how they relate to heart disease.
+  Based on the following patient data and the heart disease risk prediction, provide a clear and concise explanation of why the patient received this prediction. 
+
+  IMPORTANT FORMATTING RULES:
+  1. You MUST format your response using Markdown.
+  2. Start with a short, **bold** summary sentence.
+  3. Use a bulleted list to highlight the specific metrics that contributed most to the risk.
+  4. End with 2-3 short, actionable bullet points for recommendations.
+  5. Never output a single block of text.
 
   Patient Data:
   - Age: {{{age}}}

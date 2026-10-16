@@ -14,6 +14,7 @@ The system allows users to input clinical data, receive real-time predictions, a
 🔐 Authentication – Secure user login/signup
 📁 History Tracking – View previous diagnosis results
 📈 Data Visualization – Charts for better understanding of health metrics
+💚 Smart Health Routine – Generates three supportive lifestyle steps for high-risk results using Gemini
 🏗️ Tech Stack
 Frontend & Backend: Next.js (App Router, Server Actions)
 Language: TypeScript
@@ -29,6 +30,8 @@ This project uses GenAI (via Genkit) to generate explanations:
 Structured patient data is passed to a prompt
 AI generates human-readable explanations
 Fallback mechanism ensures reliability if AI fails
+
+High-risk results also request a three-step Smart Health Routine from the Django API. The Gemini API key must be configured on the backend in `back-end/.env` as `GEMINI_API_KEY`; it is never sent to the browser. The backend only flags resting blood pressure at or above 130 mm Hg, total cholesterol at or above 240 mg/dL, and the existing fasting-blood-sugar flag (above 120 mg/dL). The routine is general wellness information and is not medical advice.
 
 #Project Structure
 /app

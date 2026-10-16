@@ -16,9 +16,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/Logo";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User, Mail, Lock, CheckCircle, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Lock, CheckCircle, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { API_URL } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Email validation regex
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -265,11 +266,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4 relative overflow-hidden">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-sky-50/70 to-emerald-50/50 p-4 relative overflow-hidden">
       <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
       <div className="absolute bottom-0 -right-4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
 
-      <Card className="w-full max-w-md border-none shadow-xl relative z-10">
+      <Card className="relative z-10 w-full max-w-md rounded-3xl border border-white/70 bg-white/70 shadow-2xl shadow-slate-300/40 backdrop-blur-xl">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">
             <Logo />
@@ -522,7 +523,13 @@ export default function RegisterPage() {
                     !passwordMatch
                   }
                 >
-                  {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : "Create Account"}
+                  {isLoading ? (
+                    <span className="inline-flex items-center gap-1" aria-label="Creating account">
+                      <Skeleton className="h-1.5 w-1.5 rounded-full bg-primary-foreground/80" />
+                      <Skeleton className="h-1.5 w-1.5 rounded-full bg-primary-foreground/80 [animation-delay:150ms]" />
+                      <Skeleton className="h-1.5 w-1.5 rounded-full bg-primary-foreground/80 [animation-delay:300ms]" />
+                    </span>
+                  ) : "Create Account"}
                 </Button>
             </>
           </form>

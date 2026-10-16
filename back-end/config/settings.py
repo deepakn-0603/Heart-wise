@@ -21,6 +21,7 @@ load_dotenv(dotenv_path=env_path)
 
 
 SECRET_KEY = os.getenv('SECRET_KEY')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

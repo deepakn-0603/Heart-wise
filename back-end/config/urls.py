@@ -35,4 +35,5 @@ urlpatterns = [
     path('api/users/', user_views.get_users),
     path('api/diagnosis/', user_views.create_diagnosis),
     path('api/diagnosis/<int:user_id>/', user_views.get_user_diagnoses),
+    path('api/smart-health-routine/', user_views.generate_smart_health_routine),
 ]
