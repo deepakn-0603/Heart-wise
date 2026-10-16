@@ -16,7 +16,22 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.http import JsonResponse
+from users.views import register_user, send_otp, verify_otp
+
+
+def custom_404(request, exception):
+    return JsonResponse(
+        {"error": "Not found", "detail": "The requested endpoint was not found."},
+        status=404,
+    )
+
+
+handler404 = custom_404
 
 urlpatterns = [
+    path('register/', register_user, name='register'),
+    path('send-otp/', send_otp, name='send-otp'),
+    path('verify-otp/', verify_otp, name='verify-otp'),
     path('api/', include('users.urls')),
 ]
