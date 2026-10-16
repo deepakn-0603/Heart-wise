@@ -44,10 +44,10 @@ export function UserNav() {
             <User className="mr-2 h-4 w-4" />
             <span>Profile</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => router.push("/payment")}>
-            <CreditCard className="mr-2 h-4 w-4" />
-            <span>Billing</span>
-          </DropdownMenuItem>
+          {/* <DropdownMenuItem onClick={() => router.push("/payment")}> */}
+            {/* <CreditCard className="mr-2 h-4 w-4" /> */}
+            {/* <span>Billing</span> */}
+          {/* </DropdownMenuItem> */}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push("/")}>

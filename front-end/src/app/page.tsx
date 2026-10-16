@@ -160,9 +160,9 @@ export default function LoginPage() {
               Sign up
             </Link>
           </div>
-          <Link href="#" className="text-xs text-muted-foreground hover:underline">
+          {/* <Link href="#" className="text-xs text-muted-foreground hover:underline">
             Forgot your password?
-          </Link>
+          </Link> */}
         </CardFooter>
       </Card>
     </div>

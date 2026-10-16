@@ -1,131 +1,49 @@
-import re
-import random
-import string
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
-from django.core.mail import send_mail
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Diagnosis
 from .serializers import DiagnosisSerializer
-from rest_framework import status
-from django.core.cache import cache
-import logging
-import secrets
-from django.conf import settings
-
-EMAIL_REGEX = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
-logger = logging.getLogger(__name__)
-
-def send_otp_email(to_email, subject, text):
-    send_mail(
-        subject=subject,
-        message=text,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[to_email],
-        fail_silently=False,
-    )
-    
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def send_otp(request):
-    """Send OTP to email"""
-    email = request.data.get('email')
-    
-    if not email:
-        return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
-    
-    if not re.match(EMAIL_REGEX, email):
-        return Response({"error": "Invalid email format"}, status=status.HTTP_400_BAD_REQUEST)
-    
-    if User.objects.filter(email=email).exists():
-        return Response({"error": "Email already registered"}, status=status.HTTP_400_BAD_REQUEST)
-    
-    otp = ''.join(secrets.choice(string.digits) for _ in range(6))
-    cache.set(f'otp_{email}', otp, timeout=600)
-
-    try:
-        send_otp_email(
-            email,
-            "HeartWise Email Verification",
-            f"Your verification code is: {otp}\n\nThis code expires in 10 minutes.",
-        )
-        return Response({"message": "OTP sent successfully", "email": email},
-                        status=status.HTTP_200_OK)
-    except Exception:
-        logger.exception("Failed to send OTP email")
-        cache.delete(f'otp_{email}')
-        return Response({"error": "Failed to send OTP. Please try again."},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def verify_otp(request):
-    """Verify OTP"""
-    email = request.data.get('email')
-    otp = request.data.get('otp')
-    
-    if not email or not otp:
-        return Response(
-            {"error": "Email and OTP are required"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    cached_otp = cache.get(f'otp_{email}')
-    
-    if not cached_otp:
-        return Response(
-            {"error": "OTP expired. Please request a new one."},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    if cached_otp != otp:
-        return Response(
-            {"error": "Invalid OTP. Please try again."},
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-    
-    cache.set(f'verified_{email}', True, timeout=1800)  
-    cache.delete(f'otp_{email}')  
-    
-    return Response({
-        "message": "Email verified successfully",
-        "verified": True
-    }, status=status.HTTP_200_OK)
-
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_user(request):
-    email = request.data.get('email')
+    name = request.data.get('name', '').strip()
+    email = request.data.get('email', '').strip()
+    phone_number = request.data.get('phone_number', '').strip()
     password = request.data.get('password')
-    name = request.data.get('name', '')
-    
-    if not cache.get(f'verified_{email}'):
+    confirm_password = request.data.get('confirm_password')
+
+    required_fields = {
+        'name': name,
+        'email': email,
+        'phone_number': phone_number,
+        'password': password,
+        'confirm_password': confirm_password,
+    }
+    missing_fields = [field for field, value in required_fields.items() if not value]
+    if missing_fields:
         return Response(
-            {"error": "Please verify your email first"},
+            {"error": "All fields are required", "missing_fields": missing_fields},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
-    if not email or not password:
-        return Response(
-            {"error": "Email and password required"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    if User.objects.filter(username=email).exists():
-        return Response(
-            {"error": "User already exists"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
+
+    if '@' not in email or '.' not in email.rsplit('@', 1)[-1]:
+        return Response({"error": "Invalid email format"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if password != confirm_password:
+        return Response({"error": "Passwords do not match"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if User.objects.filter(email__iexact=email).exists() or User.objects.filter(username__iexact=email).exists():
+        return Response({"error": "Email already registered"}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
-        name_parts = name.split(' ', 1) if name else ['', '']
+        name_parts = name.split(None, 1)
         first_name = name_parts[0]
         last_name = name_parts[1] if len(name_parts) > 1 else ''
-        
+
         user = User.objects.create_user(
             username=email,
             email=email,
@@ -133,22 +51,19 @@ def register_user(request):
             first_name=first_name,
             last_name=last_name
         )
-        
-        cache.delete(f'verified_{email}')
-        
-        
         return Response({
             "message": "User created successfully",
             "user": {
                 "id": user.id,
                 "email": user.email,
                 "name": f"{user.first_name} {user.last_name}".strip(),
+                "phone_number": phone_number,
             }
         }, status=status.HTTP_201_CREATED)
-    
-    except Exception as e:
+
+    except Exception:
         return Response(
-            {"error": f"Registration failed: {str(e)}"},
+            {"error": "Registration failed"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 

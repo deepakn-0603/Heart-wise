@@ -14,10 +14,9 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path, include
+from django.urls import path
 from django.http import JsonResponse
-from users.views import register_user, send_otp, verify_otp
+from users import views as user_views
 
 
 def custom_404(request, exception):
@@ -30,8 +29,10 @@ def custom_404(request, exception):
 handler404 = custom_404
 
 urlpatterns = [
-    path('register/', register_user, name='register'),
-    path('send-otp/', send_otp, name='send-otp'),
-    path('verify-otp/', verify_otp, name='verify-otp'),
-    path('api/', include('users.urls')),
+    path('register/', user_views.register_user, name='register'),
+    path('api/register/', user_views.register_user),
+    path('api/login/', user_views.login_user),
+    path('api/users/', user_views.get_users),
+    path('api/diagnosis/', user_views.create_diagnosis),
+    path('api/diagnosis/<int:user_id>/', user_views.get_user_diagnoses),
 ]

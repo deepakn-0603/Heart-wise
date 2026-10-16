@@ -56,9 +56,9 @@ export default function RegisterPage() {
   // Form states
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [otp, setOtp] = useState("");
 
   // Validation states
   const [emailError, setEmailError] = useState("");
@@ -78,24 +78,9 @@ export default function RegisterPage() {
   const [passwordMatch, setPasswordMatch] = useState(false);
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
 
-  // OTP states
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [otpError, setOtpError] = useState("");
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [otpResendTimer, setOtpResendTimer] = useState(0);
-
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  // OTP Timer
-  useEffect(() => {
-    if (otpResendTimer > 0) {
-      const timer = setTimeout(() => setOtpResendTimer(otpResendTimer - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [otpResendTimer]);
 
   // Email validation
   const validateEmail = (value: string) => {
@@ -177,83 +162,6 @@ export default function RegisterPage() {
     setPasswordMatch(password === value);
   };
 
-  // Send OTP
-  const sendOTP = async () => {
-    if (!emailValid) {
-      setEmailError("Please enter a valid email first");
-      return;
-    }
-
-    setOtpLoading(true);
-
-    try {
-      const response = await fetch(`${API_URL}/send-otp/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setOtpSent(true);
-        setOtpResendTimer(60);
-        toast({
-          title: "OTP Sent",
-          description: `Verification code sent to ${email}`,
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: data.error || "Could not send OTP",
-        });
-      }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Network Error",
-        description: "Could not send OTP. Check your connection.",
-      });
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  const verifyOTP = async () => {
-    if (!otp || otp.length !== 6) {
-      setOtpError("Please enter a valid 6-digit code");
-      return;
-    }
-
-    setOtpLoading(true);
-
-    try {
-      const response = await fetch(`${API_URL}/verify-otp/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setOtpVerified(true);
-        setOtpError("");
-        toast({
-          title: "Email Verified",
-          description: "Your email has been verified successfully",
-        });
-      } else {
-        setOtpError(data.error || "Invalid OTP. Please try again.");
-      }
-    } catch (error) {
-      setOtpError("Could not verify OTP. Please try again.");
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
   // Handle form submission
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -277,11 +185,11 @@ export default function RegisterPage() {
       return;
     }
 
-    if (!otpVerified) {
+    if (!phoneNumber.trim()) {
       toast({
         variant: "destructive",
-        title: "Verification Required",
-        description: "Please verify your email with OTP first",
+        title: "Validation Error",
+        description: "Please enter your phone number",
       });
       return;
     }
@@ -306,11 +214,17 @@ export default function RegisterPage() {
 
     setIsLoading(true);
 
-    try {;
+    try {
       const response = await fetch(`${API_URL}/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({
+          name: name.trim(),
+          email,
+          phone_number: phoneNumber.trim(),
+          password,
+          confirm_password: confirmPassword,
+        }),
       });
 
       const data = await response.json();
@@ -323,11 +237,9 @@ export default function RegisterPage() {
         // Clear form
         setName("");
         setEmail("");
+        setPhoneNumber("");
         setPassword("");
         setConfirmPassword("");
-        setOtp("");
-        setOtpVerified(false);
-        setOtpSent(false);
         
         setTimeout(() => router.push("/"), 1500);
       } else {
@@ -390,124 +302,57 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Email Field with OTP */}
+            {/* Email Field */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="patient@example.com"
-                      className={cn(
-                        "pl-9 pr-10",
-                        emailValid && "border-green-500 focus:border-green-500",
-                        emailError && !emailValid && "border-red-500 focus:border-red-500"
-                      )}
-                      required
-                      disabled={otpSent || isLoading}
-                      value={email}
-                      onChange={(e) => validateEmail(e.target.value)}
-                    />
-                    {emailValid && (
-                      <CheckCircle className="absolute right-3 top-3 h-4 w-4 text-green-500" />
-                    )}
-                    {emailError && (
-                      <AlertCircle className="absolute right-3 top-3 h-4 w-4 text-red-500" />
-                    )}
-                  </div>
-                  <Button
-                    type="button"
-                    disabled={!emailValid || otpSent || otpLoading || isLoading}
-                    onClick={sendOTP}
-                    className="w-24"
-                  >
-                    {otpLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send OTP"}
-                  </Button>
-                </div>
-
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="patient@example.com"
+                  className={cn(
+                    "pl-9 pr-10",
+                    emailValid && "border-green-500 focus:border-green-500",
+                    emailError && !emailValid && "border-red-500 focus:border-red-500"
+                  )}
+                  required
+                  disabled={isLoading}
+                  value={email}
+                  onChange={(e) => validateEmail(e.target.value)}
+                />
+                {emailValid && (
+                  <CheckCircle className="absolute right-3 top-3 h-4 w-4 text-green-500" />
+                )}
                 {emailError && (
-                  <p className="text-sm text-red-500 flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4" />
-                    {emailError}
-                  </p>
+                  <AlertCircle className="absolute right-3 top-3 h-4 w-4 text-red-500" />
                 )}
               </div>
-
-              {/* OTP Input */}
-              {otpSent && !otpVerified && (
-                <div className="space-y-2 pt-2 border-t">
-                  <Label htmlFor="otp" className="text-sm">
-                    Verification Code
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="otp"
-                      type="text"
-                      placeholder="000000"
-                      maxLength={6}
-                      className={cn(
-                        "text-center font-mono tracking-widest",
-                        otpVerified && "border-green-500",
-                        otpError && "border-red-500"
-                      )}
-                      value={otp}
-                      onChange={(e) => {
-                        setOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
-                        setOtpError("");
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      disabled={otpLoading || otp.length !== 6}
-                      onClick={verifyOTP}
-                      className="w-24"
-                    >
-                      {otpLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify"}
-                    </Button>
-                  </div>
-
-                  {otpError && (
-                    <p className="text-sm text-red-500 flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4" />
-                      {otpError}
-                    </p>
-                  )}
-
-                  {otpVerified && (
-                    <p className="text-sm text-green-500 flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4" />
-                      Email verified successfully
-                    </p>
-                  )}
-
-                  {otpResendTimer > 0 && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      Resend OTP in {otpResendTimer}s
-                    </p>
-                  )}
-
-                  {otpResendTimer === 0 && !otpVerified && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="w-full text-xs"
-                      onClick={sendOTP}
-                      disabled={otpLoading}
-                    >
-                      Resend OTP
-                    </Button>
-                  )}
-                </div>
+              {emailError && (
+                <p className="text-sm text-red-500 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  {emailError}
+                </p>
               )}
             </div>
 
+            {/* Phone Number Field */}
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Input
+                id="phoneNumber"
+                type="tel"
+                autoComplete="tel"
+                placeholder="Phone number"
+                required
+                disabled={isLoading}
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+              />
+            </div>
+
             {/* Password Field */}
-            {otpVerified && (
-              <>
+            <>
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <Label htmlFor="password">Password</Label>
@@ -673,15 +518,13 @@ export default function RegisterPage() {
                     isLoading ||
                     !name ||
                     !emailValid ||
-                    !otpVerified ||
                     passwordStrength.score < 3 ||
                     !passwordMatch
                   }
                 >
                   {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : "Create Account"}
                 </Button>
-              </>
-            )}
+            </>
           </form>
         </CardContent>
 
