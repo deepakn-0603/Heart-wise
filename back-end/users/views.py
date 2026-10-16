@@ -3,18 +3,31 @@ import random
 import string
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.core.mail import send_mail
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Diagnosis
 from .serializers import DiagnosisSerializer
-from django.core.mail import send_mail
 from rest_framework import status
 from django.core.cache import cache
+import logging
+import secrets
+from django.conf import settings
 
 EMAIL_REGEX = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+logger = logging.getLogger(__name__)
 
+def send_otp_email(to_email, subject, text):
+    send_mail(
+        subject=subject,
+        message=text,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[to_email],
+        fail_silently=False,
+    )
+    
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def send_otp(request):
@@ -30,31 +43,22 @@ def send_otp(request):
     if User.objects.filter(email=email).exists():
         return Response({"error": "Email already registered"}, status=status.HTTP_400_BAD_REQUEST)
     
-    otp = ''.join(random.choices(string.digits, k=6))
-    
+    otp = ''.join(secrets.choice(string.digits) for _ in range(6))
     cache.set(f'otp_{email}', otp, timeout=600)
-    
-    try:
-        send_mail(
-            subject='HeartWise Email Verification',
-            message=f'Your verification code is: {otp}\n\nThis code expires in 10 minutes.',
-            from_email='noreply@heartwise.com',  # Update this
-            recipient_list=[email],
-            fail_silently=False,
-        )
-        
-        return Response({
-            "message": "OTP sent successfully",
-            "email": email
-        }, status=status.HTTP_200_OK)
-    
-    except Exception as e:
-        print(f"❌ Failed to send email: {str(e)}")
-        return Response(
-            {"error": "Failed to send OTP. Please try again."},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
 
+    try:
+        send_otp_email(
+            email,
+            "HeartWise Email Verification",
+            f"Your verification code is: {otp}\n\nThis code expires in 10 minutes.",
+        )
+        return Response({"message": "OTP sent successfully", "email": email},
+                        status=status.HTTP_200_OK)
+    except Exception:
+        logger.exception("Failed to send OTP email")
+        cache.delete(f'otp_{email}')
+        return Response({"error": "Failed to send OTP. Please try again."},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
