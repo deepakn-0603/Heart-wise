@@ -38,9 +38,10 @@ import { HealthChart } from "@/components/dashboard/HealthChart";
 import { HistoryTable } from "@/components/dashboard/HistoryTable";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2 } from "lucide-react";
+import { Activity, ClipboardList, FlaskConical, HeartPulse } from "lucide-react";
 import { useMounted } from "@/hooks/use-mounted";
 import { saveDiagnosis, getUserDiagnoses } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const formSchema = z.object({
   age: z.coerce.number().min(1, "Age is required").max(120),
@@ -158,6 +159,33 @@ const formFields = {
     },
   ],
 };
+
+const formSections = [
+  {
+    title: "Vitals",
+    description: "Core measurements and personal profile.",
+    icon: HeartPulse,
+    numerical: ["age", "trestbps", "thalach"],
+    categorical: ["sex"],
+    className: "",
+  },
+  {
+    title: "Blood Work",
+    description: "Key values from your latest blood test.",
+    icon: FlaskConical,
+    numerical: ["chol"],
+    categorical: ["fbs"],
+    className: "",
+  },
+  {
+    title: "General",
+    description: "Symptoms, ECG findings, and exercise response.",
+    icon: ClipboardList,
+    numerical: ["oldpeak"],
+    categorical: ["cp", "restecg", "exang", "slope", "ca", "thal"],
+    className: "xl:col-span-2",
+  },
+];
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -356,34 +384,50 @@ export default function DashboardPage() {
 
   if (!mounted || isChecking || !user) {
     return (
-      <div className="min-h-screen bg-muted/40 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading dashboard...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/70 to-emerald-50/50 p-4 md:p-8">
+        <div className="mx-auto max-w-6xl space-y-6">
+          <div className="flex h-16 items-center justify-between rounded-2xl border border-white/70 bg-white/70 px-6 shadow-sm backdrop-blur-xl">
+            <Skeleton className="h-8 w-32 bg-slate-200/80" />
+            <Skeleton className="h-10 w-10 rounded-full bg-slate-200/80" />
+          </div>
+          <div className="space-y-3 py-4">
+            <Skeleton className="h-9 w-72 bg-slate-200/80" />
+            <Skeleton className="h-4 w-96 max-w-full bg-slate-200/80" />
+          </div>
+          <div className="grid gap-6 lg:grid-cols-3">
+            <Skeleton className="h-[28rem] rounded-3xl bg-white/70 lg:col-span-2" />
+            <Skeleton className="h-[28rem] rounded-3xl bg-white/70" />
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur-sm md:px-6">
+    <div className="relative flex min-h-screen w-full flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-sky-50/70 to-emerald-50/50">
+      <div className="pointer-events-none absolute -left-32 top-32 h-96 w-96 rounded-full bg-sky-200/30 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 top-[30rem] h-96 w-96 rounded-full bg-emerald-200/30 blur-3xl" />
+      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-white/60 bg-white/70 px-4 shadow-sm backdrop-blur-xl md:px-6">
         <Logo />
         <div className="ml-auto">
           <UserNav />
         </div>
       </header>
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className="mx-auto grid w-full max-w-6xl gap-2">
-          <h1 className="text-3xl font-semibold">Heart Disease Prediction</h1>
+      <main className="relative flex flex-1 flex-col gap-6 p-4 md:gap-8 md:p-8">
+        <div className="mx-auto grid w-full max-w-7xl gap-2">
+          <div className="mb-1 flex items-center gap-2 text-sm font-medium text-sky-700">
+            <Activity className="h-4 w-4" />
+            HeartWise health overview
+          </div>
+          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Heart Disease Prediction</h1>
           <p className="text-sm text-muted-foreground">
             Welcome back, {user.name || user.email}
           </p>
         </div>
-        <div className="mx-auto grid w-full max-w-6xl items-start gap-6 md:grid-cols-[1fr_380px]">
-          <div className="grid gap-6">
+        <div className="mx-auto grid w-full max-w-screen-2xl items-start gap-6 xl:grid-cols-12">
+          <div className="grid gap-6 xl:col-span-7">
             <Tabs defaultValue="diagnosis">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-2 rounded-2xl border border-white/70 bg-white/60 p-1.5 shadow-sm backdrop-blur-xl">
                 <TabsTrigger value="diagnosis">New Diagnosis</TabsTrigger>
                 <TabsTrigger value="history">
                   Diagnosis History
@@ -395,87 +439,125 @@ export default function DashboardPage() {
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="diagnosis">
-                <Card>
+                <Card className="overflow-hidden rounded-3xl border-white/70 bg-white/65 shadow-xl shadow-slate-200/40 backdrop-blur-xl">
                   <CardHeader>
-                    <CardTitle>Patient Data Input</CardTitle>
+                    <CardTitle className="text-xl">Patient Data Input</CardTitle>
                     <CardDescription>
-                      Fill in all fields for an accurate prediction.
+                      Complete each section to build a clear picture of your heart health.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Form {...form}>
                       <form
                         onSubmit={form.handleSubmit(onSubmit)}
-                        className="space-y-6"
+                        className="space-y-5"
                       >
-                        <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
-                          {formFields.numerical.map((field) => (
-                            <FormField
-                              key={field.name}
-                              control={form.control}
-                              name={field.name as keyof PatientData}
-                              render={({ field: formField }) => (
-                                <FormItem>
-                                  <FormLabel>{field.label}</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      type="number"
-                                      placeholder={field.placeholder}
-                                      {...formField}
-                                      step="any"
-                                      suppressHydrationWarning
+                        <div className="grid gap-4 xl:grid-cols-2">
+                          {formSections.map((section) => {
+                            const SectionIcon = section.icon;
+                            const numericalFields = formFields.numerical.filter((field) =>
+                              section.numerical.includes(field.name)
+                            );
+                            const categoricalFields = formFields.categorical.filter((field) =>
+                              section.categorical.includes(field.name)
+                            );
+
+                            return (
+                              <section
+                                key={section.title}
+                                className={`rounded-2xl border border-white/80 bg-white/55 p-4 shadow-sm backdrop-blur-lg sm:p-5 ${section.className}`}
+                              >
+                                <div className="mb-5 flex items-start gap-3">
+                                  <div className="rounded-xl bg-sky-100/80 p-2.5 text-sky-700">
+                                    <SectionIcon className="h-5 w-5" />
+                                  </div>
+                                  <div>
+                                    <h2 className="font-semibold">{section.title}</h2>
+                                    <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                                      {section.description}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+                                  {numericalFields.map((field) => (
+                                    <FormField
+                                      key={field.name}
+                                      control={form.control}
+                                      name={field.name as keyof PatientData}
+                                      render={({ field: formField }) => (
+                                        <FormItem>
+                                          <FormLabel>{field.label}</FormLabel>
+                                          <FormControl>
+                                            <Input
+                                              type="number"
+                                              placeholder={field.placeholder}
+                                              {...formField}
+                                              step="any"
+                                              suppressHydrationWarning
+                                              className="border-slate-200/80 bg-white/70 focus:bg-white"
+                                            />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
                                     />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          ))}
-                          {formFields.categorical.map((field) => (
-                            <FormField
-                              key={field.name}
-                              control={form.control}
-                              name={field.name as keyof PatientData}
-                              render={({ field: formField }) => (
-                                <FormItem>
-                                  <FormLabel>{field.label}</FormLabel>
-                                  <Select
-                                    onValueChange={(val) =>
-                                      formField.onChange(Number(val))
-                                    }
-                                    defaultValue={String(formField.value)}
-                                  >
-                                    <FormControl>
-                                      <SelectTrigger suppressHydrationWarning>
-                                        <SelectValue placeholder="Select an option" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      {field.options.map((option) => (
-                                        <SelectItem
-                                          key={option.value}
-                                          value={String(option.value)}
-                                        >
-                                          {option.label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          ))}
+                                  ))}
+                                  {categoricalFields.map((field) => (
+                                    <FormField
+                                      key={field.name}
+                                      control={form.control}
+                                      name={field.name as keyof PatientData}
+                                      render={({ field: formField }) => (
+                                        <FormItem>
+                                          <FormLabel>{field.label}</FormLabel>
+                                          <Select
+                                            onValueChange={(val) =>
+                                              formField.onChange(Number(val))
+                                            }
+                                            defaultValue={String(formField.value)}
+                                          >
+                                            <FormControl>
+                                              <SelectTrigger
+                                                suppressHydrationWarning
+                                                className="border-slate-200/80 bg-white/70 focus:bg-white"
+                                              >
+                                                <SelectValue placeholder="Select an option" />
+                                              </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                              {field.options.map((option) => (
+                                                <SelectItem
+                                                  key={option.value}
+                                                  value={String(option.value)}
+                                                >
+                                                  {option.label}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                  ))}
+                                </div>
+                              </section>
+                            );
+                          })}
                         </div>
                         <Button
                           type="submit"
                           disabled={isLoading}
-                          className="w-full sm:w-auto"
+                          className="w-full rounded-xl shadow-md sm:w-auto"
                           suppressHydrationWarning
                         >
                           {isLoading ? (
                             <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              <span className="mr-2 inline-flex items-center gap-1" aria-hidden="true">
+                                <Skeleton className="h-1.5 w-1.5 rounded-full bg-primary-foreground/80" />
+                                <Skeleton className="h-1.5 w-1.5 rounded-full bg-primary-foreground/80 [animation-delay:150ms]" />
+                                <Skeleton className="h-1.5 w-1.5 rounded-full bg-primary-foreground/80 [animation-delay:300ms]" />
+                              </span>
                               Analyzing...
                             </>
                           ) : (
@@ -488,7 +570,7 @@ export default function DashboardPage() {
                 </Card>
               </TabsContent>
               <TabsContent value="history">
-                <Card>
+                <Card className="rounded-3xl border-white/70 bg-white/65 shadow-xl shadow-slate-200/40 backdrop-blur-xl">
                   <CardHeader>
                     <CardTitle>Diagnosis History</CardTitle>
                     <CardDescription>
@@ -497,11 +579,17 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     {isLoadingHistory ? (
-                      <div className="flex items-center justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        <span className="ml-2 text-sm text-muted-foreground">
-                          Loading history...
-                        </span>
+                      <div className="space-y-3 py-4" aria-label="Loading diagnosis history">
+                        {[0, 1, 2].map((row) => (
+                          <div key={row} className="flex items-center gap-4 rounded-xl border border-white/70 bg-white/50 p-4">
+                            <Skeleton className="h-10 w-10 rounded-full bg-slate-200/80" />
+                            <div className="flex-1 space-y-2">
+                              <Skeleton className="h-4 w-1/3 bg-slate-200/80" />
+                              <Skeleton className="h-3 w-2/3 bg-slate-200/80" />
+                            </div>
+                            <Skeleton className="h-6 w-20 rounded-full bg-slate-200/80" />
+                          </div>
+                        ))}
                       </div>
                     ) : history.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
@@ -518,7 +606,7 @@ export default function DashboardPage() {
               </TabsContent>
             </Tabs>
           </div>
-          <div className="grid gap-6">
+          <div className="grid min-w-0 gap-6 xl:col-span-5 xl:grid-cols-1">
             <PredictionResultDisplay
               result={currentResult}
               isLoading={isLoading}

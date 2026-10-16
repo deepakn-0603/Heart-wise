@@ -41,6 +41,45 @@ export interface DiagnosisResponse {
   created_at: string;
 }
 
+export interface SmartHealthRoutineResponse {
+  steps: [string, string, string];
+}
+
+export const generateSmartHealthRoutine = async (
+  patientData: Pick<DiagnosisData, 'trestbps' | 'chol' | 'fbs'>,
+  riskPrediction: 'yes' | 'no',
+): Promise<SmartHealthRoutineResponse> => {
+  try {
+    const response = await fetch(`${API_URL}/api/smart-health-routine/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        patient_data: patientData,
+        risk_prediction: riskPrediction,
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Could not generate a smart health routine.');
+    }
+    if (
+      !Array.isArray(data.steps) ||
+      data.steps.length !== 3 ||
+      data.steps.some((step: unknown) => typeof step !== 'string')
+    ) {
+      throw new Error('The smart health routine response was invalid.');
+    }
+
+    return data as SmartHealthRoutineResponse;
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error('Network error. Please check if the server is running.');
+    }
+    throw error;
+  }
+};
+
 // NEW: Save Diagnosis
 export const saveDiagnosis = async (data: DiagnosisData): Promise<{ message: string; diagnosis: DiagnosisResponse }> => {
   try {
