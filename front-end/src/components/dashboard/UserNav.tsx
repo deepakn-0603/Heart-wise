@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,24 @@ import { LogOut, User, CreditCard } from "lucide-react";
 
 export function UserNav() {
   const router = useRouter();
+  const [user, setUser] = useState<{ name?: string; email?: string } | null>(null);
+  const [isUserLoaded, setIsUserLoaded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch {
+      localStorage.removeItem("user");
+    } finally {
+      setIsUserLoaded(true);
+    }
+  }, []);
+
+  const displayName = user?.name || user?.email || (isUserLoaded ? "Patient" : "Loading...");
+  const displayEmail = user?.email || (isUserLoaded ? "No email available" : "Loading...");
 
   return (
     <DropdownMenu>
@@ -32,9 +51,9 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Patient</p>
+            <p className="text-sm font-medium leading-none">{displayName}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              patient@example.com
+              {displayEmail}
             </p>
           </div>
         </DropdownMenuLabel>
